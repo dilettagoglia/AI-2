@@ -1,5 +1,10 @@
 import telnetlib
 
+#Driver per la connessione tra Server e il nostro sistema. Resta in esecuzione mantenendo la connessione con il server.
+#Internamente offrirà una socket per leggere e scrivere
+
+#  AI Module  <-socket interna->  connectToServer  <-client telnet->
+
 class connectToServer(object):
 
     def __init__(self):
