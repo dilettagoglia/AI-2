@@ -3,10 +3,12 @@ from movement import *
 from serverConnection import connectToServer
 import configparser
 
-class karen():
+
+class Karen:
 
     def __init__(self, name):
         self.name = name
+        self.gameName = None
         self.movement = rand_movement(None)
         print("I am " + self.name)
 
@@ -28,51 +30,63 @@ class karen():
 
         return response
 
-    def leaveGame(self, gameName):
-        response = self.serverSocket.send("LEAVE " + gameName)
-        if (response[0] == "OK"):
-            print(gameName + " leaved.")
+    def leaveGame(self, reason=None):
+        if(self.gameName is None):
+            print("You are not in any game at the moment.")
+            return "OK"
+        if reason is None:
+            response = self.serverSocket.send(self.gameName + "LEAVE" + " " + reason)
+        else:
+            response = self.serverSocket.send(self.gameName + "LEAVE" + " " + reason)
+
+        if response[0] == "OK":
+            print(self.gameName + " leaved.")
+            gameName = None
         else:
             print(response)
 
         return response
 
-    def joinGame(self, gameName, playerName, nature, role, userInfo=None):
+    def joinGame(self, gameName, nature, role, userInfo=None):
         # <game> JOIN <player-name> <nature> <role> <user-info>
-        cmd = gameName + " JOIN " + playerName + " " + nature + " " + role
+        self.gameName = gameName
+        cmd = gameName + " JOIN " + self.name + " " + nature + " " + role
         if userInfo is not None:
             cmd += " " + userInfo
 
         response = self.serverSocket.send(cmd)
-        if (response[0] == "OK Joined"):
+        if response[0] == "OK Joined":
             print(gameName + " joined.")
         else:
+            self.gameName = None
             print(response)
 
         return response
 
-    def startGame(self, gameName):
-        response = self.serverSocket.send(gameName + " START")
+    def startGame(self):
+        response = self.serverSocket.send(self.gameName + " START")
         # controllo 'OK'
-        if(response[0]=='OK'):
+        if response[0]=='OK':
             print("Game started.")
         else:
             print(response)
 
         return response
 
-    def lookStatus(self, gameName):
-        response = self.serverSocket.send(gameName+" STATUS")
+    def lookStatus(self):
+        response = self.serverSocket.send(self.gameName+" STATUS")
         print(response)
 
-    def lookAtMap(self, gameName):
-        return self.serverSocket.send(gameName+" LOOK")
+    def lookAtMap(self):
+        response = self.serverSocket.send(self.gameName+" LOOK")
+        #parse the map in a matrix-formatted form and return it
+        return response
 
-    def move(self, gameName, direction):
-        return self.serverSocket.send(gameName+" MOVE " + direction)
+    def move(self, direction):
+        return self.serverSocket.send(self.gameName+" MOVE " + direction)
 
-    def shoot(self, gameName, direction):
-        return self.serverSocket.send(gameName+" SHOOT " + direction)
+    def shoot(self, direction):
+        return self.serverSocket.send(self.gameName+" SHOOT " + direction)
 
 
     # La strategia decide la prossima operazione da fare.
@@ -90,7 +104,7 @@ class karen():
         # restart timer
         direction = self.movement.move()
 
-        response = self.move("444", direction)
+        response = self.move(direction)
         print(response)
         #response = self.lookAtMap("test")
 

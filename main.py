@@ -9,15 +9,18 @@
 # dichiaro che sono pronto con START. Il server risponde OK solo quando il gioco inizia effettivamente
 # a questo punto inizia la mia strategia karen1.strategy()
 
-from karen import karen
-gameName = "444"
-myname = "a"
-karen1 = karen(myname)
+from karen import Karen
+gameName = "555"
+myname = "imnotowner"
+karen1 = Karen("amIowner")
+karen2 = Karen(myname)
 
 karen1.createGame(gameName)
-karen1.joinGame(gameName, myname, "AI", "-")
-karen1.lookStatus(gameName)
-karen1.startGame(gameName)
-karen1.lookStatus(gameName)
+karen1.joinGame(gameName, "amIowner", "AI", "-")
+karen2.joinGame(gameName, myname, "AI", "-")
 
+karen1.lookStatus()
+karen1.startGame()
+karen1.lookStatus()
 karen1.strategy()
+karen1.leaveGame()
