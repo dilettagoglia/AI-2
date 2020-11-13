@@ -8,19 +8,21 @@
 # res2 = karen2.startGame()
 # dichiaro che sono pronto con START. Il server risponde OK solo quando il gioco inizia effettivamente
 # a questo punto inizia la mia strategia karen1.strategy()
-
+from random import randint
 from karen import Karen
-gameName = "555"
-myname = "imnotowner"
-karen1 = Karen("amIowner")
+
+gameName = str(randint(100000, 900000))
+myname = "pinko"
+
+karen1 = Karen("imtheowner")
 karen2 = Karen(myname)
 
-karen1.createGame(gameName)
-karen1.joinGame(gameName, "amIowner", "AI", "-")
-karen2.joinGame(gameName, myname, "AI", "-")
+if karen1.createGame(gameName) :
+    karen1.joinGame(gameName, "imtheowner", "AI", "-")
+    karen2.joinGame(gameName, myname, "AI", "-")
 
-karen1.lookStatus()
-karen1.startGame()
-karen1.lookStatus()
-karen1.strategy()
-karen1.leaveGame()
+    karen1.lookStatus()
+    if karen1.startGame():
+        karen1.lookStatus()
+        karen1.strategy()
+        karen1.leaveGame()

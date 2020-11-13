@@ -6,11 +6,20 @@ import configparser
 
 class Karen:
 
+    # Define the AI fundamental values
     def __init__(self, name):
+
         self.name = name
+        self.symbol = None
+        self.team = None
+        self.loyalty = None
+        self.energy = None
+        self.score = None
+
         self.gameName = None
+
         self.movement = rand_movement(None)
-        print("I am " + self.name)
+        print("Hi, I am " + self.name)
 
         config = configparser.ConfigParser()
         config.read('config')
@@ -20,33 +29,38 @@ class Karen:
 
         self.serverSocket = connectToServer(self.host, self.port)
 
-
+    # Create a new game room.
+    # @return True if created, False if not
     def createGame(self, gameName):
         response = self.serverSocket.send("NEW " + gameName)
-        if(response[0] == "OK Created"):
-           print(gameName + " created.")
+        if (response[0] == "OK Created"):
+            print(self.name + " created a game room: " + gameName)
+            return True
         else:
             print(response)
+            return False
 
-        return response
-
+    # Let the AI leave a game room (works only if game started)
+    # currently doesn't work [ERROR 404 Game not found]
     def leaveGame(self, reason=None):
-        if(self.gameName is None):
+        if (self.gameName is None):
             print("You are not in any game at the moment.")
-            return "OK"
+            return False
         if reason is None:
-            response = self.serverSocket.send(self.gameName + "LEAVE" + " " + reason)
+            response = self.serverSocket.send(self.gameName + "LEAVE")
         else:
             response = self.serverSocket.send(self.gameName + "LEAVE" + " " + reason)
-
+        print(self.gameName + response[0])
         if response[0] == "OK":
-            print(self.gameName + " leaved.")
+            print(self.Name + " leaved the game " + self.gameName)
             gameName = None
+            return True
         else:
-            print(response)
+            print(self.name + ": " + response[0])
+            return False
 
-        return response
-
+    # Let the AI join a game room.
+    # @return True if joined, False otherwise
     def joinGame(self, gameName, nature, role, userInfo=None):
         # <game> JOIN <player-name> <nature> <role> <user-info>
         self.gameName = gameName
@@ -56,38 +70,46 @@ class Karen:
 
         response = self.serverSocket.send(cmd)
         if response[0] == "OK Joined":
-            print(gameName + " joined.")
+            print(self.name + " joined the game " + self.gameName)
+            return True
+
         else:
             self.gameName = None
-            print(response)
+            print(self.name + ": " + response[0])
+            return False
 
-        return response
-
+    # Only the AI who create the room can start the game.
+    # @return True if game is started, False otherwise
     def startGame(self):
         response = self.serverSocket.send(self.gameName + " START")
-        # controllo 'OK'
-        if response[0]=='OK':
-            print("Game started.")
+
+        if response[0] == 'OK Game started':
+            print(self.gameName + " started.")
+            return True
         else:
-            print(response)
+            print(self.gameName + " " + response[0])
+            return False
 
-        return response
-
+    # Let the AI to know the status of the game room and of all the player
     def lookStatus(self):
-        response = self.serverSocket.send(self.gameName+" STATUS")
+        response = self.serverSocket.send(self.gameName + " STATUS")
         print(response)
 
+    # Let the AI to look at the map (works only if the game started)
     def lookAtMap(self):
-        response = self.serverSocket.send(self.gameName+" LOOK")
-        #parse the map in a matrix-formatted form and return it
+        response = self.serverSocket.send(self.gameName + " LOOK")
+        # parse the map in a matrix-formatted form and return it
         return response
 
+    # Let the AI to move around the map.
+    # @return 'Ok moved' or 'Error'
     def move(self, direction):
-        return self.serverSocket.send(self.gameName+" MOVE " + direction)
+        return self.serverSocket.send(self.gameName + " MOVE " + direction)
 
+    # Let the AI to shoot
+    # @return 'OK x' where x is the position where the bullet landed
     def shoot(self, direction):
-        return self.serverSocket.send(self.gameName+" SHOOT " + direction)
-
+        return self.serverSocket.send(self.gameName + " SHOOT " + direction)
 
     # La strategia decide la prossima operazione da fare.
     # In particolare decide SE devo muovermi, la classe movement decide il DOVE.
@@ -98,21 +120,14 @@ class Karen:
     def strategy(self):
         # start timer
         # ciclo
-
         # ragiona
         # wait timer > 500ms riparti col ciclo
         # restart timer
         direction = self.movement.move()
 
-        response = self.move(direction)
+        # response contains in response[0] 'OK moved' or 'ERROR...'
+        response = self.shoot(direction)
         print(response)
-        #response = self.lookAtMap("test")
+        # response = self.lookAtMap("test")
 
-
-
-        #chiudi ciclo
-
-
-
-
-
+        # chiudi ciclo

@@ -18,8 +18,6 @@ class connectToServer(object):
         except:
             print("Connection Error")
             return
-        print("Connected" )
-
 
 
     def send(self, command):
