@@ -21,8 +21,6 @@ if karen1.createGame(gameName) :
     karen1.joinGame(gameName, "imtheowner", "AI", "-")
     karen2.joinGame(gameName, myname, "AI", "-")
 
-    karen1.lookStatus()
     if karen1.startGame():
         karen1.lookStatus()
         karen1.strategy()
-        karen1.leaveGame()

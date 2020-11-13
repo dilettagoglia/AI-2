@@ -1,6 +1,5 @@
 from movement import *
-
-from serverConnection import connectToServer
+from serverConnection import *
 import configparser
 
 
@@ -18,7 +17,7 @@ class Karen:
 
         self.gameName = None
 
-        self.movement = rand_movement(None)
+        self.movement = rb_movement(movement)
         print("Hi, I am " + self.name)
 
         config = configparser.ConfigParser()
@@ -50,9 +49,8 @@ class Karen:
             response = self.serverSocket.send(self.gameName + "LEAVE")
         else:
             response = self.serverSocket.send(self.gameName + "LEAVE" + " " + reason)
-        print(self.gameName + response[0])
         if response[0] == "OK":
-            print(self.Name + " leaved the game " + self.gameName)
+            print(self.name + " leaved the game " + self.gameName)
             gameName = None
             return True
         else:
@@ -93,6 +91,7 @@ class Karen:
     # Let the AI to know the status of the game room and of all the player
     def lookStatus(self):
         response = self.serverSocket.send(self.gameName + " STATUS")
+
         print(response)
 
     # Let the AI to look at the map (works only if the game started)
@@ -111,23 +110,53 @@ class Karen:
     def shoot(self, direction):
         return self.serverSocket.send(self.gameName + " SHOOT " + direction)
 
+
+    # This function parse the recieved LIST in a well formatted map
+    def parseMap(self, input):
+        def split(word):
+            return [char for char in word]
+
+        #input = eval(input)
+        input.pop(0)
+        input.pop(len(input)-1)
+        mymap = []
+
+        for row in input:
+            mymap.append(split(row))
+        return mymap
+
+
     # La strategia decide la prossima operazione da fare.
     # In particolare decide SE devo muovermi, la classe movement decide il DOVE.
     # Ottenuta la risposta dal server, guardo nuovamente la mappa e ricomincio a ragionare
     # response = self.move("test", direction)
     # response = self.lookAtMap("test")
 
+
+
     def strategy(self):
+
+        #if ctf
+        #if search recharge
+        #going for killing
+
         # start timer
         # ciclo
         # ragiona
         # wait timer > 500ms riparti col ciclo
         # restart timer
-        direction = self.movement.move()
+        #direction = self.movement.move()
 
-        # response contains in response[0] 'OK moved' or 'ERROR...'
-        response = self.shoot(direction)
-        print(response)
-        # response = self.lookAtMap("test")
+        response = self.lookAtMap()
+        if(response[0]=='OK LONG'):
+            actualMap = self.parseMap(response)
 
+            direction = self.movement.move(actualMap, 2, 2 , 2 , 4)
+            print(direction)
+
+        response = self.lookAtMap()
+        if (response[0] == 'OK LONG'):
+            actualMap = self.parseMap(response)
+            print (actualMap)
+        #print("Map len: " + str(len(actualMap)))
         # chiudi ciclo
