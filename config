@@ -2,3 +2,6 @@
 HOST = margot.di.unipi.it
 PORT= 8421
 
+[chatParam]
+HOST = margot.di.unipi.it
+PORT= 8422
