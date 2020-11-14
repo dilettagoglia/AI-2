@@ -1,3 +1,5 @@
+import string
+
 from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
@@ -24,7 +26,7 @@ def pathFinderParsing(actualMap):
     recharge = ["$"]
     barrier = ["&"]
     flags = ["x", "X"]
-    players = ["A", "a", "B", "b"]
+    players = list(string.ascii_letters)
     pathFinderMap = []
     # pathFinderMap = [[] for _ in range(32, 32)]
     # print(pathFinderMap)
@@ -52,7 +54,7 @@ def pathFinderParsing(actualMap):
                 pathFinderMap[i].append(1)
 
             if actualMap[i][j] in players:
-                pathFinderMap[i].append(0)
+                pathFinderMap[i].append(1)
 
     return pathFinderMap
 

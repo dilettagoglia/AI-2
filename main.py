@@ -21,6 +21,6 @@ if karen1.createGame(gameName) :
     karen1.joinGame(gameName, "imtheowner", "AI", "-")
     karen2.joinGame(gameName, myname, "AI", "-")
 
+    #se creatore, start dopo un po, altrimenti chiama waitToStart
     if karen1.startGame():
-        karen1.lookStatus()
         karen1.strategy()
