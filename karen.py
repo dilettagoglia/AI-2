@@ -30,7 +30,7 @@ class Karen:
         self.port_chat = config['chatParam']['PORT']
 
         self.serverSocket = connectToServer(self.host, self.port)
-        # self.chatSocket = ConnectToChat(self.host_chat, self.port_chat, self.name)
+        # self.chatSocket = ConnectToChat(self.host_chat, self.port_chat, self.me.name)
 
     # Create a new game room.
     # @return True if created, False if not
