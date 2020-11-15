@@ -11,56 +11,46 @@ class ConnectToChat(object):
     def __init__(self, host, port, name):
         self.HOST = socket.gethostbyname(host)
         self.port = port
-        self.bootstrap = "NAME " + name
+        self.bootstrap = "NAME " + name + '\n'
 
         try:
             self.net = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.net.connect((self.HOST, int(self.port)))
             print("Connected \n")
-
-            self.net.sendall(str.encode(self.bootstrap))
-            print("Nome inviato: " + self.bootstrap + '\n')
+            tmp = self.net.send(str.encode(self.bootstrap))
 
         except:
             print("Connection Error \n")
             return
 
+        t_r = ReceiveThread('Receive', self.net)
+        t_r.start()
+        message = "JOIN " + "#GLOBAL" + "\n"
+        self.net.send(str.encode(message))
+
     def connectToChannel(self, game):
-        message = "JOIN " + game
-        message2 = "JOIN " + "#GLOBAL"
-        print(str.encode(message))
-
+        message = "JOIN " + game + "\n"
         try:
-            self.net.sendall(str.encode(message))
-            self.net.sendall(str.encode(message2))
-
+            tmp2 = self.net.send(str.encode(message))
         except:
             print("Connection lost... \n")
             return
 
-        print('Joinato: ' + message + '\n')
-        print('Joinato: ' + message2 + '\n')
-        print(self.net)
-        t_r = ReceiveThread('Receive', self.net)
-        t_r.start()
-
     def leaveChannel(self, game):
-        message = "LEAVE " + game
-
+        message = "LEAVE " + game + '\n'
         try:
             self.net.send(str.encode(message))
 
         except:
             print("Connection lost... \n")
             return
-
-        print('Left: ' + message + '\n')
+        # print('Left: ' + message + '\n')
 
     def sendInChat (self, game, message):
-        send_msg = "POST " + game + " " + message
-        print(send_msg)
+        send_msg = "POST " + game + " " + message + "\n"
+        #print(send_msg)
         self.net.sendall(str.encode(send_msg))
-        print('inviato \n')
+        #print('inviato \n')
 
 
 
