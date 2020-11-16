@@ -3,6 +3,7 @@ from serverConnection import *
 from data_structure.gameStatus import *
 from pprint import pprint
 import configparser
+from chatConnection import *
 
 import re
 
@@ -25,7 +26,11 @@ class Karen:
         self.host = config['connectionParam']['HOST']
         self.port = config['connectionParam']['PORT']
 
+        self.host_chat = config['chatParam']['HOST']
+        self.port_chat = config['chatParam']['PORT']
+
         self.serverSocket = connectToServer(self.host, self.port)
+        # self.chatSocket = ConnectToChat(self.host_chat, self.port_chat, self.me.name)
 
     # Create a new game room.
     # @return True if created, False if not

@@ -1,8 +1,7 @@
 from threading import Thread
-import time
-#from chatConnection import ConnectToChat
 
 
+# inutile per ora
 class SendThread (Thread):
     def __init__(self, conn, game, msg):
         Thread.__init__(self)
@@ -11,9 +10,9 @@ class SendThread (Thread):
         self.mess = msg
 
     def run(self):
-        print ("Thread '" + self.name + "' avviato \n")
+        #print ("Thread '" + self.name + "' avviato \n")
         self.conn.sendInChat(self.game, self.mess)
-        print ("Thread '" + self.name + "' terminato \n")
+        #print ("Thread '" + self.name + "' terminato \n")
 
 
 class ReceiveThread (Thread):
@@ -24,12 +23,12 @@ class ReceiveThread (Thread):
 
     def run(self):
         print ("Thread '" + self.name + "' avviato \n")
-        #while(True):
-        #self.conn.receiveChat()
-        print('prima di receiv ' + str(self.conn))
-        received = self.conn.recv(4096)
-        print('dopo receive')
-        received = received.decode('utf-8')
-        msg_toprint = "Received: " + received
-        print(msg_toprint)
+        while(True):
+            received = self.conn.recv(4096)
+            received = received.decode('utf-8')
+            if received == '':
+                break
+            msg_toprint = "Received: " + received
+            print(msg_toprint)
+
 
