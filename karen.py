@@ -15,7 +15,7 @@ class Karen:
         self.me = Player(name)
 
         self.game = Game(None)
-
+        self.game.me = self.me
         self.movement = rb_movement(movement)
         print("Hi, I am " + self.me.name)
 
@@ -138,7 +138,7 @@ class Karen:
 
 
     # Let the AI to look at the map (works only if the game started)
-    def lookAtMap(self, firstTime=False):
+    def lookAtMap(self, firstTime):
         response = self.serverSocket.send(self.game.name + " LOOK")
         # parse the map in a matrix-formatted form and return it
         if (response[0] == 'OK LONG'):
@@ -158,7 +158,7 @@ class Karen:
         return self.serverSocket.send(self.game.name + " SHOOT " + direction)
 
     # This function parse the recieved LIST in a well formatted map
-    def parseMap(self, input, firstTime=False):
+    def parseMap(self, input, firstTime):
         def split(word):
             return [char for char in word]
 
@@ -183,20 +183,24 @@ class Karen:
                     self.me.y = i
                 elif firstTime is True:
                     if splitted[j] == "x" and self.me.symbol.isupper():
+
+                        self.game.wantedFlagName = "x"
                         self.game.wantedFlagX = j
                         self.game.wantedFlagY = i
                     elif splitted[j] == "x" and self.me.symbol.islower():
+                        self.game.toBeDefendedFlagName = "x"
                         self.game.toBeDefendedFlagX = j
                         self.game.toBeDefendedFlagY = i
-                    elif splitted[j] == "X" and self.me.symbol.isupper():
+                    elif splitted[j] == "X" and self.me.symbol.islower():
+                        self.game.wantedFlagName = "X"
                         self.game.wantedFlagX = j
                         self.game.wantedFlagY = i
-                    elif splitted[j] == "X" and self.me.symbol.islower():
+                    elif splitted[j] == "X" and self.me.symbol.isupper():
+                        self.game.toBeDefendedFlagName = "X"
                         self.game.toBeDefendedFlagX = j
                         self.game.toBeDefendedFlagY = i
 
 
-            print(input[i])
             mymap.append(splitted)
         return mymap
 
@@ -227,15 +231,15 @@ class Karen:
         self.lookStatus()
         pprint(vars(self.me))
 
-        actualMap = self.lookAtMap(firstTime=True)
+        actualMap = self.lookAtMap(True)
 
         while(True):
             if(actualMap is not None):
-                direction = self.movement.move(actualMap, self.me.x, self.me.y, self.game.wantedFlagX , self.game.wantedFlagY)
-                print(direction)
-                self.move(direction)
+                direction = self.movement.move(actualMap, self.me, self.game, self.game.wantedFlagX, self.game.wantedFlagY)
+                print("Mi muovo verso: " + direction)
+                print(str(self.shoot(direction)))
 
-                actualMap = self.lookAtMap()
+                actualMap = self.lookAtMap(False)
                 #pprint(vars(self.me))
 
 

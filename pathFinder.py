@@ -19,14 +19,16 @@ from pathfinding.finder.ida_star import IDAStarFinder
 
 
 # Parsing function
-def pathFinderParsing(actualMap):
+def pathFinderParsing(actualMap, game):
     walkable = [".", "~"]
     trap = ["!"]
     obstacles = ["#", "@"]
     recharge = ["$"]
     barrier = ["&"]
-    flags = ["x", "X"]
-    players = list(string.ascii_letters)
+    allies = game.allies.keys()
+    enemies = game.enemies.keys()
+
+
     pathFinderMap = []
     # pathFinderMap = [[] for _ in range(32, 32)]
     # print(pathFinderMap)
@@ -50,28 +52,31 @@ def pathFinderParsing(actualMap):
             if actualMap[i][j] in barrier:
                 pathFinderMap[i].append(0)
 
-            if actualMap[i][j] in flags:
+            if actualMap[i][j] == game.wantedFlagName:
                 pathFinderMap[i].append(1)
 
-            if actualMap[i][j] in players:
+            if actualMap[i][j] == game.toBeDefendedFlagName:
+                pathFinderMap[i].append(0)
+
+            if actualMap[i][j] in allies or actualMap[i][j] in enemies or actualMap[i][j] == game.me.symbol:
                 pathFinderMap[i].append(1)
 
     return pathFinderMap
 
 
-def findPath(actualMap, startx, starty, endx, endy):
-    parsedMap = pathFinderParsing(actualMap)
+def findPath(actualMap, player, game, endx, endy):
+    parsedMap = pathFinderParsing(actualMap, game)
 
     # dentro chiama il parsing
-    for row in actualMap:
-      print (row)
-    print( " ")
-    for row in parsedMap:
-        print(row)
+    # for row in actualMap:
+    #   print (row)
+    # print( " ")
+    # for row in parsedMap:
+    #     print(row)
 
     grid = Grid(matrix=parsedMap)
 
-    start = grid.node(startx, starty)
+    start = grid.node(player.x, player.y)
     end = grid.node(endx, endy)
 
     finder = BiAStarFinder(diagonal_movement=DiagonalMovement.never)
@@ -80,7 +85,7 @@ def findPath(actualMap, startx, starty, endx, endy):
     # of times the algorithm needed to be called until a way was found.
 
     print('operations:', runs, 'path length:', len(path))
-    print(grid.grid_str(path=path, start=start, end=end))
+    #print(grid.grid_str(path=path, start=start, end=end))
 
     return path[1]
 

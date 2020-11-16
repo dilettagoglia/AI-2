@@ -22,7 +22,7 @@ class connectToServer(object):
 
     def send(self, command):
         self.net.write(command.encode('utf-8') + b"\n")
-        response = [text.strip() for text in self.net.read_until(b")", 10).decode('utf-8').splitlines()]
+        response = [text.strip() for text in self.net.read_until(b")", 0.5).decode('utf-8').splitlines()]
         return response
 
 

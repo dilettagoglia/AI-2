@@ -19,7 +19,10 @@ class Game:
         self.state = None
         self.allies = dict()
         self.enemies = dict()
+        self.me = None
         self.toBeDefendedFlagX = None
         self.toBeDefendedFlagY = None
+        self.toBeDefendedFlagName = None
         self.wantedFlagX = None
         self.wantedFlagY = None
+        self.wantedFlagName = None

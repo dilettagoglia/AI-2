@@ -12,15 +12,18 @@ from random import randint
 from karen import Karen
 
 gameName = str(randint(100000, 900000))
-myname = "pinko"
 
 karen1 = Karen("imtheowner")
-karen2 = Karen(myname)
+karen2 = Karen("pinko")
+karen3 = Karen("panko")
 
 if karen1.createGame(gameName) :
     karen1.joinGame(gameName, "imtheowner", "AI", "-")
-    karen2.joinGame(gameName, myname, "AI", "-")
+    karen2.joinGame(gameName, "pinko", "AI", "-")
+    karen3.joinGame(gameName, "panko", "AI", "-")
 
     #se creatore, start dopo un po, altrimenti chiama waitToStart
     if karen1.startGame():
         karen1.strategy()
+        karen2.strategy()
+        karen3.strategy()
