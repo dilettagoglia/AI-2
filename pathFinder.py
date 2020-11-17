@@ -1,12 +1,10 @@
-import string
-
 from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
+from pathfinding.finder.bi_a_star import BiAStarFinder  # the best one
 from pathfinding.finder.a_star import AStarFinder
 from pathfinding.finder.breadth_first import BreadthFirstFinder
 # from pathfinding.finder.best_first import BestFirstFinder
 from pathfinding.finder.dijkstra import DijkstraFinder
-from pathfinding.finder.bi_a_star import BiAStarFinder  # the best one
 from pathfinding.finder.ida_star import IDAStarFinder
 
 
@@ -18,8 +16,13 @@ from pathfinding.finder.ida_star import IDAStarFinder
 # It does not make a difference for the path finding algorithm but it might be useful for your later map evaluation.
 
 
-# Parsing function
 def pathFinderParsing(actualMap, game):
+    """
+    Parse the map received from the server.
+    :param actualMap: the map received from the server.
+    :param game: Game structure to access player position.
+    :return: a numeric map used for PathFinder Algorithm.
+    """
     walkable = [".", "~"]
     trap = ["!"]
     obstacles = ["#", "@"]
@@ -30,8 +33,8 @@ def pathFinderParsing(actualMap, game):
 
 
     pathFinderMap = []
-    # pathFinderMap = [[] for _ in range(32, 32)]
-    # print(pathFinderMap)
+
+    # For each cell in the map check if it is walkable, if it's a trap, obstacle or other stuff
     for i in range(0, len(actualMap[0])):
         pathFinderMap.append([])
 
@@ -65,14 +68,16 @@ def pathFinderParsing(actualMap, game):
 
 
 def findPath(actualMap, player, game, endx, endy):
+    """
+    Apply an algorithm for path finding
+    :param actualMap: the actual map from the server.
+    :param player: Karen.
+    :param game: the game structure with all the information.
+    :param endx: the goal x coordinate.
+    :param endy: the goal y cooridnate.
+    :return: next position coordinates
+    """
     parsedMap = pathFinderParsing(actualMap, game)
-
-    # dentro chiama il parsing
-    # for row in actualMap:
-    #   print (row)
-    # print( " ")
-    # for row in parsedMap:
-    #     print(row)
 
     grid = Grid(matrix=parsedMap)
 
@@ -88,8 +93,6 @@ def findPath(actualMap, player, game, endx, endy):
     #print(grid.grid_str(path=path, start=start, end=end))
 
     return path[1]
-
-
 
 
 
