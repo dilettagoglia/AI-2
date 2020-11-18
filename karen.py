@@ -269,7 +269,10 @@ class Karen:
         return self.serverSocket.send(self.game.name + " SHOOT " + direction)
 
     def waitToStart(self):
-
+        """
+        Wait until the game start.
+        :return: start strategy if started. False on ERROR.
+        """
         self.lookStatus()
         while self.game.state == "LOBBY":
             self.lookStatus()
@@ -281,7 +284,11 @@ class Karen:
             return False
 
     def defensiveMap(self, actualMap):
-
+        """
+        Kind of defensive strategy. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
+        :param actualMap: the map retrieved from the server.
+        :return: a weighted map
+        """
         for enemykey in self.game.enemies.keys():
             enemy = self.game.enemies.get(enemykey)
             # print("Considero nemico in pos " + str(enemy.y) + " " + str(enemy.x))
@@ -319,7 +326,10 @@ class Karen:
         return actualMap
 
     def strategy(self):
-
+        """
+        Basic strategy function
+        :return: True when the game ends.
+        """
         # if ctf
         # if search recharge
         # going for killing
