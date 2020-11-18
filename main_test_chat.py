@@ -13,10 +13,10 @@ class Karen(object):
         config = configparser.ConfigParser()
         config.read('config')
 
-        self.host = config['chatParam']['HOST']
-        self.port = config['chatParam']['PORT']
+        self.ChatHOST = config['chatParam']['HOST']
+        self.ChatPORT = config['chatParam']['PORT']
 
-        self.conn = ConnectToChat(self.host, self.port, self.name)
+        self.conn = ConnectToChat(self.ChatHOST, self.ChatPORT, self.name)
 
     # inutile adesso
     #def sendMsg (self, game, msg):

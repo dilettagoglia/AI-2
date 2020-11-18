@@ -67,8 +67,8 @@ def pathFinderParsing(actualMap, game):
 
             elif actualMap[i][j] in allies or actualMap[i][j] in enemies or actualMap[i][j] == game.me.symbol:
                 pathFinderMap[i].append(1)
-    for row in pathFinderMap:
-        print(row)
+    #for row in pathFinderMap:
+    #    print(row)
     return pathFinderMap
 
 
@@ -96,7 +96,7 @@ def findPath(actualMap, player, game, endx, endy):
     # The find_path function does not only return you the path from the start to the end point it also returns the number
     # of times the algorithm needed to be called until a way was found.
 
-    print('operations:', runs, 'path length:', len(path))
+    #print('operations:', runs, 'path length:', len(path))
     #print(grid.grid_str(path=path, start=start, end=end))
 
     return path[1]

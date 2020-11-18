@@ -34,13 +34,12 @@ class connectToServer(object):
         :return: the response from server.
         """
         response = None
-        while response is None or response is []:
+        self.net.write(command.encode('utf-8') + b"\n")
+
+        while response is None or response is [] or response is "ERROR 401 Too fast":
             response=[]
-            self.net.write(command.encode('utf-8') + b"\n")
             response = [text.strip() for text in self.net.read_until(b")", float(self.delay)).decode('utf-8').splitlines()]
 
-        if response[0] == "ERROR 401 Too fast":
-            print("Delay value is too small. Restart with proper config value.")
 
         return response
 

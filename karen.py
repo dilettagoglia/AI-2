@@ -1,7 +1,7 @@
 from movement import *
 from connection.serverConnection import *
 from data_structure.gameStatus import *
-from pprint import pprint
+from connection.chatConnection import ConnectToChat
 import configparser
 import re
 
@@ -41,7 +41,11 @@ class Karen:
 
         # Initialize the connection to the server and the chat system
         self.serverSocket = connectToServer(self.host, self.port, self.delay)
-        # self.chatSocket = ConnectToChat(self.host_chat, self.port_chat, self.me.name)
+
+        self.ChatHOST = config['chatParam']['HOST']
+        self.ChatPORT = config['chatParam']['PORT']
+
+        self.chatSocket = ConnectToChat(self.ChatHOST, self.ChatPORT, self.me.name)
 
     def createGame(self, gameName):
         """
@@ -101,7 +105,9 @@ class Karen:
         if response[0] == "OK Joined":
             print(self.me.name + " joined the game " + self.game.name)
             self.game.me = self.me
-            # If the player joined the game, wait until the game state change to ACTIVE then start strategy.
+
+            self.chatSocket.connectToChannel(self.game.name)
+            self.chatSocket.sendInChat(self.game.name, self.me.name + " joined the channel " + self.game.name)
             return True
 
         else:
@@ -158,7 +164,7 @@ class Karen:
                     if row[2] == self.me.symbol:
                         self.me.x = int(row[8])
                         self.me.y = int(row[10])
-
+                        self.me.state = row[12]
                     # Not Karen, update information of other players
                     else:
                         if self.game.allies.get(row[2]) is None and self.game.allies.get(row[2]) is None:
@@ -167,6 +173,7 @@ class Karen:
                             pl.team = row[6]
                             pl.x = int(row[8])
                             pl.y = int(row[10])
+                            pl.state = row[12]
                             if pl.team == self.me.team:
                                 self.game.allies[pl.symbol] = pl
                             else:
@@ -175,10 +182,12 @@ class Karen:
                         elif self.game.allies.get(row[2]) is not None:
                             self.game.allies.get(row[2]).x = int(row[8])
                             self.game.allies.get(row[2]).y = int(row[10])
+                            self.game.allies.get(row[2]).y = row[12]
 
                         elif self.game.enemies.get(row[2]) is not None:
                             self.game.enemies.get(row[2]).x = int(row[8])
                             self.game.enemies.get(row[2]).y = int(row[10])
+                            self.game.allies.get(row[2]).y = row[12]
 
             return True
 
@@ -291,37 +300,36 @@ class Karen:
         """
         for enemykey in self.game.enemies.keys():
             enemy = self.game.enemies.get(enemykey)
-            # print("Considero nemico in pos " + str(enemy.y) + " " + str(enemy.x))
+            if enemy.state == "ACTIVE":
+                # Controllo per righe
+                i = enemy.y
+                # da  muro a nemico
+                for position in range(enemy.x, -1, -1):
+                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
+                        actualMap[i][position] = str(9)
+                    else:
+                        break
 
-            # Controllo per righe
-            i = enemy.y
-            # da  muro a nemico
-            for position in range(enemy.x, -1, -1):
-                if (actualMap[i][position] != '#'):
-                    actualMap[i][position] = str(9)
-                else:
-                    break
+                # da nemico a muro
+                for position in range(enemy.x, len(actualMap[i])):
+                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
+                        actualMap[i][position] = str(9)
+                    else:
+                        break
 
-            # da nemico a muro
-            for position in range(enemy.x, len(actualMap[i])):
-                if (actualMap[i][position] != '#'):
-                    actualMap[i][position] = str(9)
-                else:
-                    break
+                # Controllo per colonne
+                j = enemy.x
+                for position in range(enemy.y, -1, -1):
+                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
+                        actualMap[position][j] = str(9)
+                    else:
+                        break
 
-            # Controllo per colonne
-            j = enemy.x
-            for position in range(enemy.y, -1, -1):
-                if (actualMap[position][j] != '#'):
-                    actualMap[position][j] = str(9)
-                else:
-                    break
-
-            for position in range(enemy.y, len(actualMap[j])):
-                if (actualMap[position][j] != '#'):
-                    actualMap[position][j] = str(9)
-                else:
-                    break
+                for position in range(enemy.y, len(actualMap[j])):
+                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
+                        actualMap[position][j] = str(9)
+                    else:
+                        break
 
         return actualMap
 
@@ -330,42 +338,200 @@ class Karen:
         Basic strategy function
         :return: True when the game ends.
         """
-        # if ctf
-        # if search recharge
-        # going for killing
 
-        # start timer
-        # ciclo
-        # ragiona
-        # wait timer > 500ms riparti col ciclo
-        # restart timer
-        # direction = self.movement.move()
         self.lookStatus()
-        # pprint(vars(self.me))
 
         actualMap = self.lookAtMap(True)
-        parse = self.defensiveMap(actualMap)
+        defensiveMap = self.defensiveMap(actualMap)
 
         opBeforeNextLookStatus = 10
-        while self.game.state != 'FINISHED':
-            if (actualMap is not None):
-                direction = self.movement.move(actualMap, self.me, self.game, self.game.wantedFlagX,
-                                               self.game.wantedFlagY)
+        while self.game.state != 'FINISHED' and self.me.state != "KILLED":
+            direction = self.movement.move(defensiveMap, self.me, self.game, self.game.wantedFlagX,
+                                           self.game.wantedFlagY)
 
-                # se facendo questa mossa sarò in linea, move & shoot. (controlla se sto in fiume)
+            # se sto in linea con altri, sparo
+            for key in self.game.enemies:
+                enemy = self.game.enemies.get(key)
+                if self.me.x == enemy.x:
+                    self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA" )
+                    if self.me.y > enemy.y:
+                        self.shoot("N")
+                    else:
+                        self.shoot("S")
+                elif self.me.y == enemy.y:
+                    self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA")
 
-                # print("Mi muovo verso: " + direction)
-                print(str(self.move(direction)))
-                opBeforeNextLookStatus -= 1
+                    if self.me.x > enemy.x:
+                        self.shoot("W")
+                    else:
+                        self.shoot("E")
 
-                actualMap = self.lookAtMap(False)
+            # controllo se andrò in linea di tiro
+            if direction == "E" and defensiveMap[self.me.y][self.me.x+1]=="9":
+                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
 
-                # se sto in linea e non c'è muro spara  (controlla se sto in fiume)
+                # my x becomes  x+1
+                # controllo se la mossa mi porta in un fiume e sono sotto tiro
+                if actualMap[self.me.y][self.me.x+1] == "~":
 
-                actualMap = self.defensiveMap(actualMap)
+                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
+                    if defensiveMap[self.me.y][self.me.x+1] == "32":
+                        print(self.me.name + " si muove a: " + direction)
+                        self.move(direction)
+                    else:
+                        # scoraggia pathfinder a passare per il fiume
+                        defensiveMap[self.me.y][self.me.x + 1] = "32"
 
-                if (opBeforeNextLookStatus == 0):
-                    self.lookStatus()
-                    opBeforeNextLookStatus = 10
+                else:
+                    for key in self.game.enemies:
+                        enemy = self.game.enemies.get(key)
+
+                        if enemy.x == self.me.x + 1:
+                            if enemy.y == self.me.y:
+                                # spara ad est
+                                print(self.me.name + " spara a: " + direction)
+
+                                self.shoot(direction)
+                            if enemy.y > self.me.y:
+                                # muoviti ad est e spara a sud
+                                print(self.me.name + " si muove a: " + direction + " e spara a sud")
+
+                                self.move(direction)
+                                self.shoot("S")
+                            if enemy.y < self.me.y:
+                                # muoviti ad est e spara a nord
+                                print(self.me.name + " si muove a: " + direction + " e spara a nord")
+
+                                self.move(direction)
+                                self.shoot("N")
+
+                    defensiveMap = self.lookAtMap(False)
+
+            elif direction == "W" and defensiveMap[self.me.y][self.me.x-1]=="9":
+                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+
+                # my x becomes  x-1
+                if actualMap[self.me.y][self.me.x - 1] == "~":
+
+                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
+                    if defensiveMap[self.me.y][self.me.x - 1] == "32":
+                        self.move(direction)
+                        print(self.me.name + " si muove a: " + direction)
+
+                    else:
+                        # scoraggia pathfinder a passare per il fiume
+                        defensiveMap[self.me.y][self.me.x - 1] = "32"
+
+                else:
+                    for key in self.game.enemies:
+                        enemy = self.game.enemies.get(key)
+
+                        if enemy.x == self.me.x - 1:
+                            if enemy.y == self.me.y:
+                                # spara ad ovest
+                                print(self.me.name + " spara a: " + direction )
+
+                                self.shoot(direction)
+                            if enemy.y > self.me.y:
+                                # muoviti ad ovest e spara a sud
+                                print(self.me.name + " si muove a: " + direction + " e spara a sud")
+
+                                self.move(direction)
+                                self.shoot("S")
+                            if enemy.y < self.me.y:
+                                # muoviti ad ovest e spara a nord
+                                print(self.me.name + " si muove a: " + direction + " e spara a nord")
+
+                                self.move(direction)
+                                self.shoot("N")
+                    defensiveMap = self.lookAtMap(False)
+
+
+            elif direction == "S" and defensiveMap[self.me.y+1][self.me.x]=="9":
+                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+
+                # my y becomes  y+1
+                if actualMap[self.me.y+1][self.me.x] == "~":
+
+                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
+                    if defensiveMap[self.me.y+1][self.me.x] == "32":
+                        print(self.me.name + " si muove a: " + direction)
+
+                        self.move(direction)
+                    else:
+                        # scoraggia pathfinder a passare per il fiume
+                        defensiveMap[self.me.y+1][self.me.x] = "32"
+
+                else:
+                    for key in self.game.enemies.keys():
+                        enemy = self.game.enemies.get(key)
+                        if enemy.y == self.me.y + 1:
+                            if enemy.x == self.me.x:
+                                # spara a sud
+                                print(self.me.name + " spara a: " + direction)
+
+                                self.shoot(direction)
+                            if enemy.x > self.me.x:
+                                # muoviti ad sud e spara ad est
+                                print(self.me.name + " si muove a: " + direction + " e spara a est")
+
+                                self.move(direction)
+                                self.shoot("E")
+                            if enemy.x < self.me.x:
+                                # muoviti a sud e spara ad ovest
+                                print(self.me.name + " si muove a: " + direction + " e spara a ovest")
+
+                                self.move(direction)
+                                self.shoot("W")
+                    defensiveMap = self.lookAtMap(False)
+
+            elif direction == "N" and defensiveMap[self.me.y-1][self.me.x]=="9":
+                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+
+                # my y becomes  y-1
+                if actualMap[self.me.y-1][self.me.x] == "~":
+
+                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
+                    if defensiveMap[self.me.y-1][self.me.x] == "32":
+                        print(self.me.name + " si muove a: " + direction )
+
+                        self.move(direction)
+                    else:
+                        # scoraggia pathfinder a passare per il fiume
+                        defensiveMap[self.me.y-1][self.me.x] = "32"
+
+                else:
+                    for key in self.game.enemies:
+                        enemy = self.game.enemies.get(key)
+                        if enemy.y == self.me.y - 1:
+                            if enemy.x == self.me.x:
+                                # spara a nord
+                                print(self.me.name + " si spara a: " + direction )
+
+                                self.shoot(direction)
+                            if enemy.x > self.me.x:
+                                # muoviti ad nord e spara ad est
+                                print(self.me.name + " si muove a: " + direction + " e spara a est")
+
+                                self.move(direction)
+                                self.shoot("E")
+                            if enemy.x < self.me.x:
+                                # muoviti a nord e spara ad ovest
+                                print(self.me.name + " si muove a: " + direction + " e spara a ovest")
+                                self.move(direction)
+                                self.shoot("W")
+                    defensiveMap = self.lookAtMap(False)
+
+
+
+            else:
+
+                self.move(direction)
+                defensiveMap = self.lookAtMap(False)
+
+            self.lookStatus()
+
+                # if my energy < X search for a recharge.
+                # if self.me.energy == 0:
 
         return True

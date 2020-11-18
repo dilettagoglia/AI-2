@@ -21,13 +21,18 @@ class aKarenThread (Thread):
 karen1 = Karen("imtheowner")
 
 
-t1 = aKarenThread("pinko")
+t1 = aKarenThread("AI-02")
 t2 = aKarenThread("panko")
-
+t3 = aKarenThread("ponko")
+t4 = aKarenThread("punko")
+t5 = aKarenThread("penko")
 if karen1.createGame(gameName):
     if karen1.joinGame(gameName, "imtheowner", "AI", "-"):
         t1.start()
         t2.start()
+        t3.start()
+        t4.start()
+        t5.start()
         time.sleep(8)
         karen1.startGame()
 
