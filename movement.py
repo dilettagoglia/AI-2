@@ -27,6 +27,7 @@ class rand_movement(movement):
         return str(direction)
 
 
+
 class rb_movement(movement):
     """
     Define a rule based movement policy

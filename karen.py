@@ -43,7 +43,6 @@ class Karen:
         self.serverSocket = connectToServer(self.host, self.port, self.delay)
         # self.chatSocket = ConnectToChat(self.host_chat, self.port_chat, self.me.name)
 
-
     def createGame(self, gameName):
         """
         Create a new Game
@@ -52,12 +51,13 @@ class Karen:
         """
         response = self.serverSocket.send("NEW " + gameName)
         if response[0] == "OK Created":
+            self.game.name = gameName
+            self.game.me = self.me
             print(self.me.name + " created a game room: " + gameName)
             return True
         else:
             print(response)
             return False
-
 
     def leaveGame(self, reason=None):
         """
@@ -82,7 +82,6 @@ class Karen:
             print(self.me.name + ": " + response[0])
             return False
 
-
     def joinGame(self, gameName, nature, role, userInfo=None):
         """
         Let the AI join a game
@@ -101,27 +100,26 @@ class Karen:
         response = self.serverSocket.send(cmd)
         if response[0] == "OK Joined":
             print(self.me.name + " joined the game " + self.game.name)
-
+            self.game.me = self.me
             # If the player joined the game, wait until the game state change to ACTIVE then start strategy.
-            return self.waitToStart()
+            return True
 
         else:
             self.game.name = None
             print(self.me.name + ": " + response[0])
             return False
 
-
     def startGame(self):
         """
         Send Start command to the server. Only the AI who create the room can start the game.
         :return: True if the game started, False ow.
         """
+        self.lookStatus()
         response = self.serverSocket.send(self.game.name + " START")
 
         if response[0] == 'OK Game started':
             print(self.game.name + " started.")
 
-            #If response is positive, wait until status is changed to ACTIVE then start strategy
             return self.waitToStart()
         else:
             print(self.game.name + " " + response[0])
@@ -134,8 +132,7 @@ class Karen:
         """
         response = self.serverSocket.send(self.game.name + " STATUS")
         if response[0] == 'OK LONG':
-            for s in range(1, len(response) - 1):
-
+            for s in range(0, len(response)):
                 # Parse information about the Game
                 if response[s].startswith("GA:"):
                     row = re.split(' |=', response[s])
@@ -144,7 +141,7 @@ class Karen:
                     self.game.size = row[6]
 
                 # Parse information about Karen
-                elif response[s].startswith("ME:"):
+                if response[s].startswith("ME:"):
                     row = re.split(' |=', response[s])
                     self.me.symbol = row[2]
                     self.me.name = row[4]
@@ -159,8 +156,8 @@ class Karen:
 
                     # Karen is also present in the PLAYER list
                     if row[2] == self.me.symbol:
-                        self.me.x = row[8]
-                        self.me.y = row[10]
+                        self.me.x = int(row[8])
+                        self.me.y = int(row[10])
 
                     # Not Karen, update information of other players
                     else:
@@ -168,26 +165,25 @@ class Karen:
                             pl = Player(row[4])
                             pl.symbol = row[2]
                             pl.team = row[6]
-                            pl.x = row[8]
-                            pl.y = row[10]
+                            pl.x = int(row[8])
+                            pl.y = int(row[10])
                             if pl.team == self.me.team:
                                 self.game.allies[pl.symbol] = pl
                             else:
                                 self.game.enemies[pl.symbol] = pl
 
                         elif self.game.allies.get(row[2]) is not None:
-                            self.game.allies.get(row[2]).x = row[8]
-                            self.game.allies.get(row[2]).y = row[10]
+                            self.game.allies.get(row[2]).x = int(row[8])
+                            self.game.allies.get(row[2]).y = int(row[10])
 
                         elif self.game.enemies.get(row[2]) is not None:
-                            self.game.enemies.get(row[2]).x = row[8]
-                            self.game.enemies.get(row[2]).y = row[10]
+                            self.game.enemies.get(row[2]).x = int(row[8])
+                            self.game.enemies.get(row[2]).y = int(row[10])
 
-                return True
+            return True
 
-            else:
-                return False
-
+        else:
+            return False
 
     def lookAtMap(self, firstTime):
 
@@ -211,7 +207,6 @@ class Karen:
 
                 splitted = split(response[i])
                 for j in range(0, len(splitted)):
-
                     # For each symbol in the map, check if it identifies a player. If so, update its position information
                     if self.game.allies.get(splitted[j]) is not None:
                         self.game.allies.get(splitted[j]).x = j
@@ -257,7 +252,6 @@ class Karen:
         """
         return self.serverSocket.send(self.game.name + " NOP ")
 
-
     def move(self, direction):
         """
          Basic function that send the "MOOVE" command to the server
@@ -265,7 +259,6 @@ class Karen:
          :return: 'OK moved', 'Ok blocked' or 'ERROR'
          """
         return self.serverSocket.send(self.game.name + " MOVE " + direction)
-
 
     def shoot(self, direction):
         """
@@ -275,19 +268,55 @@ class Karen:
         """
         return self.serverSocket.send(self.game.name + " SHOOT " + direction)
 
-
-
     def waitToStart(self):
 
+        self.lookStatus()
         while self.game.state == "LOBBY":
-            response = self.lookStatus()
+            self.lookStatus()
+
         if self.game.state == "ACTIVE":
             self.strategy()
         else:
-            print("Error. Game status from LOBBY to " + self.game.state)
+            print("Error. Game status from LOBBY to " + str(self.game.state))
             return False
 
+    def defensiveMap(self, actualMap):
 
+        for enemykey in self.game.enemies.keys():
+            enemy = self.game.enemies.get(enemykey)
+            # print("Considero nemico in pos " + str(enemy.y) + " " + str(enemy.x))
+
+            # Controllo per righe
+            i = enemy.y
+            # da  muro a nemico
+            for position in range(enemy.x, -1, -1):
+                if (actualMap[i][position] != '#'):
+                    actualMap[i][position] = str(9)
+                else:
+                    break
+
+            # da nemico a muro
+            for position in range(enemy.x, len(actualMap[i])):
+                if (actualMap[i][position] != '#'):
+                    actualMap[i][position] = str(9)
+                else:
+                    break
+
+            # Controllo per colonne
+            j = enemy.x
+            for position in range(enemy.y, -1, -1):
+                if (actualMap[position][j] != '#'):
+                    actualMap[position][j] = str(9)
+                else:
+                    break
+
+            for position in range(enemy.y, len(actualMap[j])):
+                if (actualMap[position][j] != '#'):
+                    actualMap[position][j] = str(9)
+                else:
+                    break
+
+        return actualMap
 
     def strategy(self):
 
@@ -302,19 +331,31 @@ class Karen:
         # restart timer
         # direction = self.movement.move()
         self.lookStatus()
-        pprint(vars(self.me))
+        # pprint(vars(self.me))
 
         actualMap = self.lookAtMap(True)
+        parse = self.defensiveMap(actualMap)
 
-        while(True):
-            if(actualMap is not None):
-                direction = self.movement.move(actualMap, self.me, self.game, self.game.wantedFlagX, self.game.wantedFlagY)
-                print("Mi muovo verso: " + direction)
-                print(str(self.shoot(direction)))
+        opBeforeNextLookStatus = 10
+        while self.game.state != 'FINISHED':
+            if (actualMap is not None):
+                direction = self.movement.move(actualMap, self.me, self.game, self.game.wantedFlagX,
+                                               self.game.wantedFlagY)
+
+                # se facendo questa mossa sarò in linea, move & shoot. (controlla se sto in fiume)
+
+                # print("Mi muovo verso: " + direction)
+                print(str(self.move(direction)))
+                opBeforeNextLookStatus -= 1
 
                 actualMap = self.lookAtMap(False)
-                #pprint(vars(self.me))
 
+                # se sto in linea e non c'è muro spara  (controlla se sto in fiume)
 
-        # print("Map len: " + str(len(actualMap)))
-        # chiudi ciclo
+                actualMap = self.defensiveMap(actualMap)
+
+                if (opBeforeNextLookStatus == 0):
+                    self.lookStatus()
+                    opBeforeNextLookStatus = 10
+
+        return True

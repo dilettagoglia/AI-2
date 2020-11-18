@@ -23,6 +23,7 @@ def pathFinderParsing(actualMap, game):
     :param game: Game structure to access player position.
     :return: a numeric map used for PathFinder Algorithm.
     """
+    value = ["9", "6"]
     walkable = [".", "~"]
     trap = ["!"]
     obstacles = ["#", "@"]
@@ -30,9 +31,9 @@ def pathFinderParsing(actualMap, game):
     barrier = ["&"]
     allies = game.allies.keys()
     enemies = game.enemies.keys()
-
-
     pathFinderMap = []
+
+
 
     # For each cell in the map check if it is walkable, if it's a trap, obstacle or other stuff
     for i in range(0, len(actualMap[0])):
@@ -40,30 +41,34 @@ def pathFinderParsing(actualMap, game):
 
         for j in range(0, len(actualMap[0])):
 
-            if actualMap[i][j] in walkable:
+            if actualMap[i][j] in value:
+                pathFinderMap[i].append(int(actualMap[i][j]))
+
+            elif actualMap[i][j] in walkable:
                 pathFinderMap[i].append(1)
 
-            if actualMap[i][j] in trap:
+            elif actualMap[i][j] in trap:
                 pathFinderMap[i].append(2)
 
-            if actualMap[i][j] in obstacles:
+            elif actualMap[i][j] in obstacles:
                 pathFinderMap[i].append(0)
 
-            if actualMap[i][j] in recharge:
+            elif actualMap[i][j] in recharge:
                 pathFinderMap[i].append(1)
 
-            if actualMap[i][j] in barrier:
+            elif actualMap[i][j] in barrier:
                 pathFinderMap[i].append(0)
 
-            if actualMap[i][j] == game.wantedFlagName:
+            elif actualMap[i][j] == game.wantedFlagName:
                 pathFinderMap[i].append(1)
 
-            if actualMap[i][j] == game.toBeDefendedFlagName:
+            elif actualMap[i][j] == game.toBeDefendedFlagName:
                 pathFinderMap[i].append(0)
 
-            if actualMap[i][j] in allies or actualMap[i][j] in enemies or actualMap[i][j] == game.me.symbol:
+            elif actualMap[i][j] in allies or actualMap[i][j] in enemies or actualMap[i][j] == game.me.symbol:
                 pathFinderMap[i].append(1)
-
+    for row in pathFinderMap:
+        print(row)
     return pathFinderMap
 
 
@@ -79,12 +84,14 @@ def findPath(actualMap, player, game, endx, endy):
     """
     parsedMap = pathFinderParsing(actualMap, game)
 
+    #for row in parsedMap:
+    #    print(row)
     grid = Grid(matrix=parsedMap)
 
     start = grid.node(player.x, player.y)
     end = grid.node(endx, endy)
 
-    finder = BiAStarFinder(diagonal_movement=DiagonalMovement.never)
+    finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
     path, runs = finder.find_path(start, end, grid)
     # The find_path function does not only return you the path from the start to the end point it also returns the number
     # of times the algorithm needed to be called until a way was found.
