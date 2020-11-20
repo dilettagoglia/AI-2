@@ -107,7 +107,6 @@ class Karen:
             self.game.me = self.me
 
             self.chatSocket.connectToChannel(self.game.name)
-            self.chatSocket.sendInChat(self.game.name, self.me.name + " joined the channel " + self.game.name)
             return True
 
         else:
@@ -154,7 +153,7 @@ class Karen:
                     self.me.team = row[6]
                     self.me.loyalty = row[8]
                     self.me.energy = row[10]
-                    self.me.score = row[12]
+                    #self.me.score = row[12]
 
                 # Parse information about other players (allies or enemies)
                 elif response[s].startswith("PL:"):
@@ -292,7 +291,7 @@ class Karen:
             print("Error. Game status from LOBBY to " + str(self.game.state))
             return False
 
-    def defensiveMap(self, actualMap):
+    def deterministicMap(self, actualMap):
         """
         Kind of defensive strategy. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
         :param actualMap: the map retrieved from the server.
@@ -333,21 +332,21 @@ class Karen:
 
         return actualMap
 
-    def strategy(self):
+    def act(self, endx, endy):
         """
-        Basic strategy function
-        :return: True when the game ends.
+        Basic action function
+        :return: True when the game ends or the action is completed.
         """
 
         self.lookStatus()
 
         actualMap = self.lookAtMap(True)
-        defensiveMap = self.defensiveMap(actualMap)
+        deterministicMap = self.deterministicMap(actualMap)
 
         opBeforeNextLookStatus = 10
         while self.game.state != 'FINISHED' and self.me.state != "KILLED":
-            direction = self.movement.move(defensiveMap, self.me, self.game, self.game.wantedFlagX,
-                                           self.game.wantedFlagY)
+            direction = self.movement.move(deterministicMap, self.me, self.game, endx,
+                                           endy)
 
             # se sto in linea con altri, sparo
             for key in self.game.enemies:
@@ -367,7 +366,7 @@ class Karen:
                         self.shoot("E")
 
             # controllo se andrò in linea di tiro
-            if direction == "E" and defensiveMap[self.me.y][self.me.x+1]=="9":
+            if direction == "E" and deterministicMap[self.me.y][self.me.x+1]=="9":
                 self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
 
                 # my x becomes  x+1
@@ -375,12 +374,12 @@ class Karen:
                 if actualMap[self.me.y][self.me.x+1] == "~":
 
                     # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if defensiveMap[self.me.y][self.me.x+1] == "32":
+                    if deterministicMap[self.me.y][self.me.x+1] == "32":
                         print(self.me.name + " si muove a: " + direction)
                         self.move(direction)
                     else:
                         # scoraggia pathfinder a passare per il fiume
-                        defensiveMap[self.me.y][self.me.x + 1] = "32"
+                        deterministicMap[self.me.y][self.me.x + 1] = "32"
 
                 else:
                     for key in self.game.enemies:
@@ -405,22 +404,22 @@ class Karen:
                                 self.move(direction)
                                 self.shoot("N")
 
-                    defensiveMap = self.lookAtMap(False)
+                    deterministicMap = self.lookAtMap(False)
 
-            elif direction == "W" and defensiveMap[self.me.y][self.me.x-1]=="9":
+            elif direction == "W" and deterministicMap[self.me.y][self.me.x-1]=="9":
                 self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
 
                 # my x becomes  x-1
                 if actualMap[self.me.y][self.me.x - 1] == "~":
 
                     # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if defensiveMap[self.me.y][self.me.x - 1] == "32":
+                    if deterministicMap[self.me.y][self.me.x - 1] == "32":
                         self.move(direction)
                         print(self.me.name + " si muove a: " + direction)
 
                     else:
                         # scoraggia pathfinder a passare per il fiume
-                        defensiveMap[self.me.y][self.me.x - 1] = "32"
+                        deterministicMap[self.me.y][self.me.x - 1] = "32"
 
                 else:
                     for key in self.game.enemies:
@@ -444,23 +443,23 @@ class Karen:
 
                                 self.move(direction)
                                 self.shoot("N")
-                    defensiveMap = self.lookAtMap(False)
+                    deterministicMap = self.lookAtMap(False)
 
 
-            elif direction == "S" and defensiveMap[self.me.y+1][self.me.x]=="9":
+            elif direction == "S" and deterministicMap[self.me.y+1][self.me.x]=="9":
                 self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
 
                 # my y becomes  y+1
                 if actualMap[self.me.y+1][self.me.x] == "~":
 
                     # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if defensiveMap[self.me.y+1][self.me.x] == "32":
+                    if deterministicMap[self.me.y+1][self.me.x] == "32":
                         print(self.me.name + " si muove a: " + direction)
 
                         self.move(direction)
                     else:
                         # scoraggia pathfinder a passare per il fiume
-                        defensiveMap[self.me.y+1][self.me.x] = "32"
+                        deterministicMap[self.me.y+1][self.me.x] = "32"
 
                 else:
                     for key in self.game.enemies.keys():
@@ -483,22 +482,22 @@ class Karen:
 
                                 self.move(direction)
                                 self.shoot("W")
-                    defensiveMap = self.lookAtMap(False)
+                    deterministicMap = self.lookAtMap(False)
 
-            elif direction == "N" and defensiveMap[self.me.y-1][self.me.x]=="9":
+            elif direction == "N" and deterministicMap[self.me.y-1][self.me.x]=="9":
                 self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
 
                 # my y becomes  y-1
                 if actualMap[self.me.y-1][self.me.x] == "~":
 
                     # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if defensiveMap[self.me.y-1][self.me.x] == "32":
+                    if deterministicMap[self.me.y-1][self.me.x] == "32":
                         print(self.me.name + " si muove a: " + direction )
 
                         self.move(direction)
                     else:
                         # scoraggia pathfinder a passare per il fiume
-                        defensiveMap[self.me.y-1][self.me.x] = "32"
+                        deterministicMap[self.me.y-1][self.me.x] = "32"
 
                 else:
                     for key in self.game.enemies:
@@ -520,18 +519,21 @@ class Karen:
                                 print(self.me.name + " si muove a: " + direction + " e spara a ovest")
                                 self.move(direction)
                                 self.shoot("W")
-                    defensiveMap = self.lookAtMap(False)
+                    deterministicMap = self.lookAtMap(False)
 
 
 
             else:
 
                 self.move(direction)
-                defensiveMap = self.lookAtMap(False)
+                deterministicMap = self.lookAtMap(False)
 
             self.lookStatus()
 
-                # if my energy < X search for a recharge.
-                # if self.me.energy == 0:
+        while(self.game.state != "FINISHED"):
+            self.lookStatus()
 
         return True
+
+    def fuzzyStrategy(self):
+        self.act(self.game.wantedFlagY, self.game.wantedFlagX)

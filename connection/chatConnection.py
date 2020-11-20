@@ -18,14 +18,12 @@ class ReceiveThread (Thread):
 
     def run(self):
 
-        print ("Thread '" + self.name + "' avviato \n")
         while(True):
             received = self.conn.recv(4096)
             received = received.decode('utf-8')
             if received == '':
                 break
-            msg_toprint = "Received: " + received
-            print(msg_toprint)
+            msg_toprint = received
 
 
 class ConnectToChat(object):
@@ -62,8 +60,8 @@ class ConnectToChat(object):
         t_r.start()
 
         # JOIN the Global Channel for communication from the Server.
-        message = "JOIN " + "#GLOBAL" + "\n"
-        self.net.send(str.encode(message))
+        # message = "JOIN " + "#GLOBAL" + "\n"
+        # self.net.send(str.encode(message))
 
 
     def connectToChannel(self, game):
