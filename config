@@ -6,3 +6,4 @@ DELAY = 0.50
 [chatParam]
 HOST = margot.di.unipi.it
 PORT = 8422
+
