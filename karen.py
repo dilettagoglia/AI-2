@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from movement import *
 from connection.serverConnection import *
 from data_structure.gameStatus import *
@@ -24,8 +26,7 @@ class Karen:
 
         # A Karen can play one game at a time. Game encapsulate all the information about the map and other players
         self.game = Game(None)
-        self.game.me = self.me
-        self.movement = rb_movement(movement)
+        self.me.movement = rb_movement(movement)
 
         print("Hi, I am " + self.me.name)
 
@@ -56,7 +57,6 @@ class Karen:
         response = self.serverSocket.send("NEW " + gameName)
         if response[0] == "OK Created":
             self.game.name = gameName
-            self.game.me = self.me
             print(self.me.name + " created a game room: " + gameName)
             return True
         else:
@@ -97,14 +97,21 @@ class Karen:
         """
         # <game> JOIN <player-name> <nature> <role> <user-info>
         self.game.name = gameName
+        self.me.nature = nature
+        self.me.role = role
+        self.me.userInfo = userInfo
+
         cmd = gameName + " JOIN " + self.me.name + " " + nature + " " + role
         if userInfo is not None:
             cmd += " " + userInfo
 
         response = self.serverSocket.send(cmd)
-        if response[0] == "OK Joined":
+
+        if response[0].startswith("OK"):
             print(self.me.name + " joined the game " + self.game.name)
-            self.game.me = self.me
+            row = re.split(' |=', response[0])
+            self.me.team = row[2]
+            self.me.loyalty = row[4]
 
             self.chatSocket.connectToChannel(self.game.name)
             return True
@@ -136,6 +143,7 @@ class Karen:
         :return: True if information updated, False ow.
         """
         response = self.serverSocket.send(self.game.name + " STATUS")
+
         if response[0] == 'OK LONG':
             for s in range(0, len(response)):
                 # Parse information about the Game
@@ -153,7 +161,7 @@ class Karen:
                     self.me.team = row[6]
                     self.me.loyalty = row[8]
                     self.me.energy = row[10]
-                    #self.me.score = row[12]
+                    self.me.score = row[12]
 
                 # Parse information about other players (allies or enemies)
                 elif response[s].startswith("PL:"):
@@ -166,7 +174,7 @@ class Karen:
                         self.me.state = row[12]
                     # Not Karen, update information of other players
                     else:
-                        if self.game.allies.get(row[2]) is None and self.game.allies.get(row[2]) is None:
+                        if self.game.allies.get(row[2]) is None and self.game.enemies.get(row[2]) is None:
                             pl = Player(row[4])
                             pl.symbol = row[2]
                             pl.team = row[6]
@@ -181,12 +189,13 @@ class Karen:
                         elif self.game.allies.get(row[2]) is not None:
                             self.game.allies.get(row[2]).x = int(row[8])
                             self.game.allies.get(row[2]).y = int(row[10])
-                            self.game.allies.get(row[2]).y = row[12]
+                            self.game.allies.get(row[2]).state = row[12]
+
 
                         elif self.game.enemies.get(row[2]) is not None:
                             self.game.enemies.get(row[2]).x = int(row[8])
                             self.game.enemies.get(row[2]).y = int(row[10])
-                            self.game.allies.get(row[2]).y = row[12]
+                            self.game.enemies.get(row[2]).state = row[12]
 
             return True
 
@@ -206,7 +215,7 @@ class Karen:
         """
         response = self.serverSocket.send(self.game.name + " LOOK")
 
-        if (response[0] == 'OK LONG'):
+        if response[0] == 'OK LONG':
             response.pop(0)
             response.pop(len(response) - 1)
             actualMap = []
@@ -248,6 +257,7 @@ class Karen:
                             self.game.toBeDefendedFlagY = i
 
                 actualMap.append(splitted)
+
             return actualMap
 
         else:
@@ -286,51 +296,128 @@ class Karen:
             self.lookStatus()
 
         if self.game.state == "ACTIVE":
-            self.strategy()
+            self.fuzzyStrategy()
         else:
             print("Error. Game status from LOBBY to " + str(self.game.state))
             return False
 
-    def deterministicMap(self, actualMap):
+    def deterministicMap(self):
         """
-        Kind of defensive strategy. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
-        :param actualMap: the map retrieved from the server.
-        :return: a weighted map
-        """
+         CELLULAR AUTOMATA MAP. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
+         :param actualMap: the map retrieved from the server.
+         :return: a weighted map
+         """
+
+        value = ["9", "6"]
+        walkable = ["."]
+        river = ["~"]
+        trap = ["!"]
+        obstacles = ["#", "@"]
+        recharge = ["$"]
+        barrier = ["&"]
+        allies = self.game.allies.keys()
+        enemies = self.game.enemies.keys()
+        serverMap = self.game.serverMap
+        weightedMap = serverMap
+
+        def recursiveMap(i, j, rec_weightedMap, weight):
+            '''
+            Recursive map generation. Resamble Cellular Automata decision adding weight to the map consistently with the distance from enemies
+            :param i: the horizontal coordinate
+            :param j: the vertical coordinate
+            :param rec_weightedMap: the map
+            :param weight: the weight of being in [i:,:j] position
+            :return: a weighted map
+            '''
+            # da  muro a nemico
+            for position in range(enemy.x, -1, -1):
+                if rec_weightedMap[i][position] != '#' and rec_weightedMap[i][position] != "&":
+                    if isinstance(rec_weightedMap[i][position], int) is False:
+                        rec_weightedMap[i][position] = weight
+                else:
+                    break
+
+            # da nemico a muro
+            for position in range(enemy.x, len(rec_weightedMap[i])):
+                if rec_weightedMap[i][position] != '#' and rec_weightedMap[i][position] != "&":
+                    if isinstance(rec_weightedMap[i][position], int) is False:
+                        rec_weightedMap[i][position] = weight
+                else:
+                    break
+
+            # Controllo per colonne
+            for position in range(enemy.y, -1, -1):
+                if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&":
+                    if isinstance(rec_weightedMap[position][j], int) is False:
+                        rec_weightedMap[position][j] = weight
+                else:
+                    break
+
+            for position in range(enemy.y, len(rec_weightedMap[j])):
+                if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&":
+                    if isinstance(rec_weightedMap[position][j], int) is False:
+                        rec_weightedMap[position][j] = weight
+                else:
+                    break
+
+            return rec_weightedMap
+
+        # ---------------------------------------------------------------------------------------------------
+        # For each enemy that is still alive, create a weighted map assigning value to all the position in the map around the enemy
         for enemykey in self.game.enemies.keys():
             enemy = self.game.enemies.get(enemykey)
             if enemy.state == "ACTIVE":
-                # Controllo per righe
-                i = enemy.y
-                # da  muro a nemico
-                for position in range(enemy.x, -1, -1):
-                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
-                        actualMap[i][position] = str(9)
-                    else:
-                        break
+                # First call to assign weight to the enemy's 'x column' and 'y row' coordinate
+                weightedMap = recursiveMap(enemy.y, enemy.x, serverMap, 9)
 
-                # da nemico a muro
-                for position in range(enemy.x, len(actualMap[i])):
-                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
-                        actualMap[i][position] = str(9)
-                    else:
-                        break
+                # Recursive calls giving the already weighted to assign weight to all the coordinate around the enemy player
+                if enemy.y - 1 >= 0:
+                    if enemy.x - 1 >= 0:
+                        weightedMap = recursiveMap(enemy.y - 1, enemy.x - 1, weightedMap, 6)
+                    if enemy.x + 1 < len(weightedMap[0]):
+                        weightedMap = recursiveMap(enemy.y - 1, enemy.x + 1, weightedMap, 6)
 
-                # Controllo per colonne
-                j = enemy.x
-                for position in range(enemy.y, -1, -1):
-                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
-                        actualMap[position][j] = str(9)
-                    else:
-                        break
+                if enemy.y + 1 < len(weightedMap[0]):
+                    if enemy.x - 1 >= 0:
+                        weightedMap = recursiveMap(enemy.y + 1, enemy.x - 1, weightedMap, 6)
+                    if enemy.x + 1 < len(weightedMap[0]):
+                        weightedMap = recursiveMap(enemy.y + 1, enemy.x + 1, weightedMap, 6)
 
-                for position in range(enemy.y, len(actualMap[j])):
-                    if actualMap[i][position] != '#' and actualMap[i][position] != "&":
-                        actualMap[position][j] = str(9)
-                    else:
-                        break
+        # For each position, assign different weight considering their nature
+        for i in range(0, len(serverMap[0])):
+            for j in range(0, len(serverMap[0])):
 
-        return actualMap
+                if weightedMap[i][j] in value:
+                    None
+
+                elif serverMap[i][j] in walkable:
+                    weightedMap[i][j] = 1
+
+                elif serverMap[i][j] in river:
+                    weightedMap[i][j] = 25
+
+                elif serverMap[i][j] in trap:
+                    weightedMap[i][j] = 32
+
+                elif serverMap[i][j] in obstacles:
+                    weightedMap[i][j] = 0
+
+                elif serverMap[i][j] in recharge:
+                    weightedMap[i][j] = 1
+
+                elif serverMap[i][j] in barrier:
+                    weightedMap[i][j] = 0
+
+                elif serverMap[i][j] == self.game.wantedFlagName:
+                    weightedMap[i][j] = 1
+
+                elif serverMap[i][j] == self.game.toBeDefendedFlagName:
+                    weightedMap[i][j] = 0
+
+                elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][j] == self.me.symbol:
+                    weightedMap[i][j] = 1
+
+        return weightedMap
 
     def act(self, endx, endy):
         """
@@ -338,60 +425,43 @@ class Karen:
         :return: True when the game ends or the action is completed.
         """
 
-        self.lookStatus()
 
-        actualMap = self.lookAtMap(True)
-        deterministicMap = self.deterministicMap(actualMap)
-
-        opBeforeNextLookStatus = 10
         while self.game.state != 'FINISHED' and self.me.state != "KILLED":
-            direction = self.movement.move(deterministicMap, self.me, self.game, endx,
-                                           endy)
+            direction = self.me.movement.move(self.game.weightedMap, self.me, endx, endy)
 
             # se sto in linea con altri, sparo
             for key in self.game.enemies:
                 enemy = self.game.enemies.get(key)
-                if self.me.x == enemy.x:
-                    self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA" )
-                    if self.me.y > enemy.y:
-                        self.shoot("N")
-                    else:
-                        self.shoot("S")
-                elif self.me.y == enemy.y:
-                    self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA")
 
-                    if self.me.x > enemy.x:
-                        self.shoot("W")
-                    else:
-                        self.shoot("E")
+                if enemy.state == "ACTIVE":
+                    if self.me.x == enemy.x:
+                        self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA")
+                        if self.me.y > enemy.y:
+                            self.shoot("N")
+                        else:
+                            self.shoot("S")
+                    elif self.me.y == enemy.y:
+                        self.chatSocket.sendInChat(self.game.name, enemy.name + " I kill u bastard!!! RATATATAAAAAAA")
+
+                        if self.me.x > enemy.x:
+                            self.shoot("W")
+                        else:
+                            self.shoot("E")
 
             # controllo se andrò in linea di tiro
-            if direction == "E" and deterministicMap[self.me.y][self.me.x+1]=="9":
-                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+            if direction == "E" and self.game.weightedMap[self.me.y][self.me.x + 1] == "9":
 
                 # my x becomes  x+1
-                # controllo se la mossa mi porta in un fiume e sono sotto tiro
-                if actualMap[self.me.y][self.me.x+1] == "~":
-
-                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if deterministicMap[self.me.y][self.me.x+1] == "32":
-                        print(self.me.name + " si muove a: " + direction)
-                        self.move(direction)
-                    else:
-                        # scoraggia pathfinder a passare per il fiume
-                        deterministicMap[self.me.y][self.me.x + 1] = "32"
+                if self.game.serverMap[self.me.y][self.me.x + 1] == "~":
+                    self.move(direction)
 
                 else:
                     for key in self.game.enemies:
                         enemy = self.game.enemies.get(key)
 
                         if enemy.x == self.me.x + 1:
-                            if enemy.y == self.me.y:
-                                # spara ad est
-                                print(self.me.name + " spara a: " + direction)
 
-                                self.shoot(direction)
-                            if enemy.y > self.me.y:
+                            if enemy.y >= self.me.y:
                                 # muoviti ad est e spara a sud
                                 print(self.me.name + " si muove a: " + direction + " e spara a sud")
 
@@ -404,34 +474,19 @@ class Karen:
                                 self.move(direction)
                                 self.shoot("N")
 
-                    deterministicMap = self.lookAtMap(False)
-
-            elif direction == "W" and deterministicMap[self.me.y][self.me.x-1]=="9":
-                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+            elif direction == "W" and self.game.weightedMap[self.me.y][self.me.x - 1] == "9":
 
                 # my x becomes  x-1
-                if actualMap[self.me.y][self.me.x - 1] == "~":
-
-                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if deterministicMap[self.me.y][self.me.x - 1] == "32":
-                        self.move(direction)
-                        print(self.me.name + " si muove a: " + direction)
-
-                    else:
-                        # scoraggia pathfinder a passare per il fiume
-                        deterministicMap[self.me.y][self.me.x - 1] = "32"
+                if self.game.serverMap[self.me.y][self.me.x - 1] == "~":
+                    self.move(direction)
 
                 else:
                     for key in self.game.enemies:
                         enemy = self.game.enemies.get(key)
 
                         if enemy.x == self.me.x - 1:
-                            if enemy.y == self.me.y:
-                                # spara ad ovest
-                                print(self.me.name + " spara a: " + direction )
 
-                                self.shoot(direction)
-                            if enemy.y > self.me.y:
+                            if enemy.y >= self.me.y:
                                 # muoviti ad ovest e spara a sud
                                 print(self.me.name + " si muove a: " + direction + " e spara a sud")
 
@@ -443,35 +498,20 @@ class Karen:
 
                                 self.move(direction)
                                 self.shoot("N")
-                    deterministicMap = self.lookAtMap(False)
 
-
-            elif direction == "S" and deterministicMap[self.me.y+1][self.me.x]=="9":
-                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+            elif direction == "S" and self.game.weightedMap[self.me.y + 1][self.me.x] == "9":
 
                 # my y becomes  y+1
-                if actualMap[self.me.y+1][self.me.x] == "~":
-
-                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if deterministicMap[self.me.y+1][self.me.x] == "32":
-                        print(self.me.name + " si muove a: " + direction)
-
-                        self.move(direction)
-                    else:
-                        # scoraggia pathfinder a passare per il fiume
-                        deterministicMap[self.me.y+1][self.me.x] = "32"
+                if self.game.serverMap[self.me.y + 1][self.me.x] == "~":
+                    self.move(direction)
 
                 else:
                     for key in self.game.enemies.keys():
                         enemy = self.game.enemies.get(key)
-                        if enemy.y == self.me.y + 1:
-                            if enemy.x == self.me.x:
-                                # spara a sud
-                                print(self.me.name + " spara a: " + direction)
 
-                                self.shoot(direction)
-                            if enemy.x > self.me.x:
-                                # muoviti ad sud e spara ad est
+                        if enemy.y == self.me.y + 1:
+
+                            if enemy.x >= self.me.x:
                                 print(self.me.name + " si muove a: " + direction + " e spara a est")
 
                                 self.move(direction)
@@ -482,32 +522,20 @@ class Karen:
 
                                 self.move(direction)
                                 self.shoot("W")
-                    deterministicMap = self.lookAtMap(False)
 
-            elif direction == "N" and deterministicMap[self.me.y-1][self.me.x]=="9":
-                self.chatSocket.sendInChat(self.game.name, enemy.name + " KAREN IS COMING BITCH!")
+
+            elif direction == "N" and self.game.weightedMap[self.me.y - 1][self.me.x] == "9":
 
                 # my y becomes  y-1
-                if actualMap[self.me.y-1][self.me.x] == "~":
-
-                    # se mi porta nel fiume e avevo già fatto pathfinder per evitarlo, muoviti lo stesso
-                    if deterministicMap[self.me.y-1][self.me.x] == "32":
-                        print(self.me.name + " si muove a: " + direction )
-
-                        self.move(direction)
-                    else:
-                        # scoraggia pathfinder a passare per il fiume
-                        deterministicMap[self.me.y-1][self.me.x] = "32"
+                if self.game.serverMap[self.me.y - 1][self.me.x] == "~":
+                    self.move(direction)
 
                 else:
                     for key in self.game.enemies:
                         enemy = self.game.enemies.get(key)
-                        if enemy.y == self.me.y - 1:
-                            if enemy.x == self.me.x:
-                                # spara a nord
-                                print(self.me.name + " si spara a: " + direction )
 
-                                self.shoot(direction)
+                        if enemy.y == self.me.y - 1:
+
                             if enemy.x > self.me.x:
                                 # muoviti ad nord e spara ad est
                                 print(self.me.name + " si muove a: " + direction + " e spara a est")
@@ -519,21 +547,31 @@ class Karen:
                                 print(self.me.name + " si muove a: " + direction + " e spara a ovest")
                                 self.move(direction)
                                 self.shoot("W")
-                    deterministicMap = self.lookAtMap(False)
 
-
-
+            # Non sono andato in linea di tiro
             else:
-
                 self.move(direction)
-                deterministicMap = self.lookAtMap(False)
 
+            # AGGIORNAMENTO
+            self.game.serverMap = self.lookAtMap(False)
+            self.game.weightedMap = self.deterministicMap()
             self.lookStatus()
+            # riparte il while
 
-        while(self.game.state != "FINISHED"):
+
+        if(self.game.state != "FINISHED"):
+            print(self.me.name + " è morto.")
+
+        while self.game.state == "ACTIVE":
             self.lookStatus()
 
         return True
 
     def fuzzyStrategy(self):
-        self.act(self.game.wantedFlagY, self.game.wantedFlagX)
+
+        self.lookStatus()
+
+        self.game.serverMap = self.lookAtMap(True)
+        self.game.weightedMap = self.deterministicMap()
+
+        self.act(self.game.wantedFlagX, self.game.wantedFlagY)

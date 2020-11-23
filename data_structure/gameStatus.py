@@ -1,6 +1,8 @@
 class Player:
 
     def __init__(self, name):
+        self.movement = None
+        self.state = None
         self.name = name
         self.symbol = None
         self.team = None
@@ -15,6 +17,8 @@ class Player:
 class Game:
 
     def __init__(self, gameName):
+        self.serverMap = None
+        self.weightedMap = None
         self.name = gameName
         self.state = None
         self.allies = dict()

@@ -50,7 +50,7 @@ class ConnectToChat(object):
             self.net = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.net.connect((self.HOST, int(self.port)))
             tmp = self.net.send(str.encode(self.bootstrap))
-
+            print("Connected to the chatServer.")
         except:
             print("Connection Error \n")
             return

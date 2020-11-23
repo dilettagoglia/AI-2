@@ -14,7 +14,7 @@ class aKarenThread (Thread):
         self.name = name
 
     def run(self):
-
+        print( self.name + " call join")
         self.karen.joinGame(gameName, self.name, "AI", "-")
         self.karen.waitToStart()
 
@@ -27,10 +27,14 @@ t3 = aKarenThread("ponko")
 
 
 if karen1.createGame(gameName):
-    if karen1.joinGame(gameName, "imtheowner", "AI", "-"):
-        t1.start()
-        t2.start()
-        t3.start()
+    karen1.joinGame(gameName, "imtheowner", "AI", "-")
+    karen1.lookStatus()
+    t1.start()
+    t2.start()
+    t3.start()
 
-        time.sleep(8)
-        karen1.startGame()
+    time.sleep(1)
+    karen1.lookStatus()
+
+
+    karen1.startGame()

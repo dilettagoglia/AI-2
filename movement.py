@@ -35,17 +35,18 @@ class rb_movement(movement):
     def __init__(self, param):
         movement.__init__(self, param)
 
-    def move(self, actualMap, player, game, endx, endy):
+    def move(self, actualMap, player, endx, endy):
         """
         :param actualMap: the map recieved from the server.
         :param player: the player structure to know his position.
-        :param game: the game structure to know all the game information.
         :param endx: the goal X coordinate.
         :param endy: the goal Y coordinate.
         :return: a specific direction where to move.
         """
-        coordinate = findPath(actualMap, player, game, endx, endy)
+        path = findPath(actualMap, player, endx, endy)
 
+
+        coordinate = path[1]
         # x: spostamento all'interno di una lista
         # y: spostamento da una lista all'altra
 

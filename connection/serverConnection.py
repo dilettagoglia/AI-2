@@ -39,7 +39,7 @@ class connectToServer(object):
         response = []
 
         if abs(self.ts - time.time()) < float(self.delay):
-            print( "sleep per : " + str(float(self.delay) - abs(self.ts - time.time())))
+            # print( "sleep per : " + str(float(self.delay) - abs(self.ts - time.time())))
             time.sleep(float(self.delay) - abs(self.ts - time.time()))
         self.ts = time.time()
 

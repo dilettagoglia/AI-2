@@ -16,77 +16,19 @@ from pathfinding.finder.ida_star import IDAStarFinder
 # It does not make a difference for the path finding algorithm but it might be useful for your later map evaluation.
 
 
-def pathFinderParsing(actualMap, game):
-    """
-    Parse the map received from the server.
-    :param actualMap: the map received from the server.
-    :param game: Game structure to access player position.
-    :return: a numeric map used for PathFinder Algorithm.
-    """
-    value = ["9", "6"]
-    walkable = [".", "~"]
-    trap = ["!"]
-    obstacles = ["#", "@"]
-    recharge = ["$"]
-    barrier = ["&"]
-    allies = game.allies.keys()
-    enemies = game.enemies.keys()
-    pathFinderMap = []
-
-
-
-    # For each cell in the map check if it is walkable, if it's a trap, obstacle or other stuff
-    for i in range(0, len(actualMap[0])):
-        pathFinderMap.append([])
-
-        for j in range(0, len(actualMap[0])):
-
-            if actualMap[i][j] in value:
-                pathFinderMap[i].append(int(actualMap[i][j]))
-
-            elif actualMap[i][j] in walkable:
-                pathFinderMap[i].append(1)
-
-            elif actualMap[i][j] in trap:
-                pathFinderMap[i].append(2)
-
-            elif actualMap[i][j] in obstacles:
-                pathFinderMap[i].append(0)
-
-            elif actualMap[i][j] in recharge:
-                pathFinderMap[i].append(1)
-
-            elif actualMap[i][j] in barrier:
-                pathFinderMap[i].append(0)
-
-            elif actualMap[i][j] == game.wantedFlagName:
-                pathFinderMap[i].append(1)
-
-            elif actualMap[i][j] == game.toBeDefendedFlagName:
-                pathFinderMap[i].append(0)
-
-            elif actualMap[i][j] in allies or actualMap[i][j] in enemies or actualMap[i][j] == game.me.symbol:
-                pathFinderMap[i].append(1)
-    #for row in pathFinderMap:
-    #    print(row)
-    return pathFinderMap
-
-
-def findPath(actualMap, player, game, endx, endy):
+def findPath(weightedMap, player, endx, endy):
     """
     Apply an algorithm for path finding
-    :param actualMap: the actual map from the server.
-    :param player: Karen.
-    :param game: the game structure with all the information.
+    :param weightedMap: the weighted and parsed map
+    :param player: the AI player object.
     :param endx: the goal x coordinate.
     :param endy: the goal y cooridnate.
     :return: next position coordinates
     """
-    parsedMap = pathFinderParsing(actualMap, game)
 
-    #for row in parsedMap:
-    #    print(row)
-    grid = Grid(matrix=parsedMap)
+    for row in weightedMap:
+        print(row)
+    grid = Grid(matrix=weightedMap)
 
     start = grid.node(player.x, player.y)
     end = grid.node(endx, endy)
@@ -99,7 +41,7 @@ def findPath(actualMap, player, game, endx, endy):
     #print('operations:', runs, 'path length:', len(path))
     #print(grid.grid_str(path=path, start=start, end=end))
 
-    return path[1]
+    return path
 
 
 

@@ -1,17 +1,59 @@
+from pathFinder import findPath
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 from matplotlib import pyplot as plt
 
+
 # karen.fuzzyStrategy chiama inputFuzzy
-# creare una funzione inputFuzzy che generi i valori di input per FuzzyControlSystem (calcolando i vari pathfinder verso tutte le possibili destinazioni).
+# creare una funzione fuzzyValues che generi i valori di input per FuzzyControlSystem (calcolando i vari pathfinder verso tutte le possibili destinazioni).
 # Dopo aver chiamato la funzione FuzzyControlSystem, aspetta il return sim.output e in base a questo valore sceglie verso dove muoversi.
-# a questo punto inputFuzzy restituisce a karen.fuzzystrategy le coordinate scelte.
+# a questo punto fuzzyValues restituisce a karen.fuzzystrategy le coordinate scelte.
 
-# OTTIMIZZAZIONE: inputFuzzy calcola già tutti i pathfinder, quindi anche quello prescelto. karen.fuzzystrategy passerà ad act già la "direction" e non le coordinate.
+# OTTIMIZZAZIONE: fuzzyValues calcola già tutti i pathfinder, quindi anche quello prescelto. karen.fuzzystrategy passerà ad act già la "direction" e non le coordinate.
+
+def fuzzyValues(me, game):
+    # game.serverMap
+    # game.weightedMap
+
+    num_enemies = 0
+    enemyDistance = dict()
+
+    # nearestRecharge [distance, xCoordinate, yCoordinate]
+    nearestRecharge = [32, 32, 32]
+    possibleAction = dict()
+    for enemy in game.enemies:
+        # for each enemy retrieve the min coordinate distance (x or y)
+        enemyDistance[enemy.symbol] = min(len(findPath(game.weightedMap, me, me.x, enemy.y)),
+                                          len(me.movement.move(game.weightedMap, me, enemy.x, me.y)))
+
+    for enemy in enemyDistance:
+        if enemyDistance[enemy] < 5:
+            num_enemies += 1
+        else:
+            enemyDistance.pop(enemy)
+
+    for i in range(0, len(game.serverMap[0])):
+        for j in range(0, len(game.serverMap[0])):
+
+            if game.serverMap[i][j] == "$":
+                tmp = len(findPath(game.weightedMap, me, i, j))
+                if tmp < nearestRecharge[0]:
+                    nearestRecharge[0] = tmp
+                    nearestRecharge[1] = i
+                    nearestRecharge[2] = j
+
+    d_flag = findPath(game.weightedMap, me, game.wantedFlagX, game.wantedFlagY)
 
 
-def FuzzyControlSystem():
+    # possible action avrà anche possibleAction['recharge'] min del pathfinder di tutti i recharge.
+    # idem i muri ecc
+
+    # pathfinder(mex, mey, enemyx, mey)
+    # pathfinder(mex, mey, mex, enemy)
+
+
+def FuzzyControlSystem(me, game):
     """
     Output values:
     -goToRecharge,  0-10
@@ -29,7 +71,7 @@ def FuzzyControlSystem():
     d_recharge = ctrl.Antecedent(np.arange(0, 32, 1), 'd_recharge')
     num_enemies = ctrl.Antecedent(np.arange(0, 20, 1), 'num_enemies')
     d_safeZone = ctrl.Antecedent(np.arange(0, 32, 1), 'd_safeZone')
-    d_barrier = ctrl.Antecedent(np.arange(0, 32, 1), 'd_barrier')
+    # d_barrier = ctrl.Antecedent(np.arange(0, 32, 1), 'd_barrier')
     # d_nearestEnemy = ctrl.Antecedent(np.arange(0, 32, 1), 'd_nearestEnemy')
 
     output = ctrl.Consequent(np.arange(0, 50, 1), 'output')
@@ -63,7 +105,7 @@ def FuzzyControlSystem():
 
     rule3 = ctrl.Rule(d_barrier['poor'] |
                       (energy['average'] & (num_enemies['average'] | num_enemies['good']) & (
-                                  d_barrier['poor'] | d_barrier['average']))
+                              d_barrier['poor'] | d_barrier['average']))
                       , output['useTheBarrier'])
 
     rule4 = ctrl.Rule(d_flag['poor'] |
@@ -72,7 +114,7 @@ def FuzzyControlSystem():
                       (energy['good'] & num_enemies['poor']) & (d_safeZone['good'] | d_safeZone['average'])
                       , output['goToFlag'])
 
-    rule5 = ctrl.Rule(num_enemies['poor'] & (energy['average'] | energy['good'])|
+    rule5 = ctrl.Rule(num_enemies['poor'] & (energy['average'] | energy['good']) |
                       (num_enemies['good'] & (d_barrier['good']) & d_safeZone['good'])
                       , output['goToKill'])
 
