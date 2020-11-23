@@ -1,0 +1,115 @@
+import numpy as np
+import skfuzzy as fuzz
+from skfuzzy import control as ctrl
+from matplotlib import pyplot as plt
+
+# karen.fuzzyStrategy chiama inputFuzzy
+# creare una funzione inputFuzzy che generi i valori di input per FuzzyControlSystem (calcolando i vari pathfinder verso tutte le possibili destinazioni).
+# Dopo aver chiamato la funzione FuzzyControlSystem, aspetta il return sim.output e in base a questo valore sceglie verso dove muoversi.
+# a questo punto inputFuzzy restituisce a karen.fuzzystrategy le coordinate scelte.
+
+# OTTIMIZZAZIONE: inputFuzzy calcola già tutti i pathfinder, quindi anche quello prescelto. karen.fuzzystrategy passerà ad act già la "direction" e non le coordinate.
+
+
+def FuzzyControlSystem():
+    """
+    Output values:
+    -goToRecharge,  0-10
+    -hideBehindTheWall 10-20
+    -useTheBarrier 20-30
+    -goToFlag, 30-40
+    -goToKill, 40-50
+
+    """
+
+    # New Antecedent/Consequent objects hold universe variables and membership functions
+
+    energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
+    d_flag = ctrl.Antecedent(np.arange(0, 32, 1), 'd_flag')
+    d_recharge = ctrl.Antecedent(np.arange(0, 32, 1), 'd_recharge')
+    num_enemies = ctrl.Antecedent(np.arange(0, 20, 1), 'num_enemies')
+    d_safeZone = ctrl.Antecedent(np.arange(0, 32, 1), 'd_safeZone')
+    # d_barrier = ctrl.Antecedent(np.arange(0, 32, 1), 'd_barrier')
+    # d_nearestEnemy = ctrl.Antecedent(np.arange(0, 32, 1), 'd_nearestEnemy')
+
+    output = ctrl.Consequent(np.arange(0, 50, 1), 'output')
+
+    output['goToRecharge'] = fuzz.trimf(output.universe, [0, 10, 10])
+    output['hideBehindTheWall'] = fuzz.trimf(output.universe, [10, 20, 20])
+    # output['useTheBarrier'] = fuzz.trimf(output.universe, [20, 30, 30])
+    output['goToFlag'] = fuzz.trimf(output.universe, [20, 30, 30])
+    # output['goToKill'] = fuzz.trimf(output.universe, [40, 50, 50])
+
+    # Auto-membership function population is possible with .automf(3, 5, or 7)
+
+    energy.automf(3)
+    d_recharge.automf(3)
+    # d_barrier.automf(3)
+    d_flag.automf(3)
+    d_safeZone.automf(3)
+    num_enemies.automf(3)
+
+
+    # antecedent visualization example
+    # energy.view()
+
+    # poor mediocre average decent good
+    needEnergy = ctrl.Rule(((energy['poor']) & (d_flag['average'] | d_flag['good']) & (num_enemies['good'] | num_enemies['average']) & d_recharge['poor'])
+                      , output['goToRecharge'])
+
+    hide = ctrl.Rule((energy['poor'] & d_safeZone['poor']) |
+                      (energy['average'] & (num_enemies['average'] | num_enemies['good']) & d_safeZone['average']) |
+                      (d_safeZone['poor'] & (num_enemies['average'] | num_enemies['good']))
+                      , output['hideBehindTheWall'])
+
+    ctf = ctrl.Rule((d_flag['poor']) &
+                      (energy['good'] | energy['average']) & (d_recharge['average'] | d_recharge['good']) & (d_safeZone['average'] | d_safeZone['good'])
+                      , output['goToFlag'])
+
+    # distinguere concettualmente goToKill dall'azione semplice di uccidere:
+    #       - se mi trovo il nemico in tiro allora sparo
+    #           --> azione semplice
+    #           --> già modellata nella startegia deterministica
+    #       - vado di proposito sotto tiro del nemico per sparargli
+    #           --> = goToKill
+    #           --> decisa dalle fuzzyrules quando si presenta un certo contesto
+    #               --> ovvero quando ho energia media/alta, sono distante da tutto il resto
+    #               --> todo: quindi prescinde dal numero di nemici vicini ?
+    #               --> todo: sarebbe meglio mettere un limite a questa azione! Es. massimo 2 volte poi vado alla bandiera
+
+
+    #killer = ctrl.Rule((energy['average'] | energy['good'])|
+     #                 ((d_flag['good'] & d_barrier['good']) & d_safeZone['good'])
+        #              , output['goToKill'])
+
+
+    # rule visualization example
+    # killer.view() # todo: non funziona
+
+
+    system = ctrl.ControlSystem(rules=[needEnergy, hide, ctf])
+
+    # Later we intend to run this system with a 21*21 set of inputs, so we almediocre
+    # that many plus one unique runs before results are flushed.
+    # Subsequent runs would return in 1/8 the time!
+    sim = ctrl.ControlSystemSimulation(system)
+
+    # Pass inputs to the ControlSystem using Antecedent labels with Pythonic API
+    # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
+    sim.input['energy'] = 256
+    sim.input['d_flag'] = 32
+    sim.input['d_recharge'] = 30
+    sim.input['num_enemies'] = 0
+    sim.input['d_safeZone'] = 30
+    # sim.input['d_barrier'] = 32
+
+    # Crunch the numbers
+    sim.compute()
+    print(sim.output)
+
+    # output visualization
+    output.view(sim=sim)
+
+
+FuzzyControlSystem()
+
