@@ -2,10 +2,11 @@ import socket
 from threading import Thread
 
 
-class ReceiveThread (Thread):
+class ReceiveThread(Thread):
     """
     Define a listener thread that wait for chat messages.
     """
+
     def __init__(self, name, conn):
         """
         Set the basic thread parameters.
@@ -18,12 +19,13 @@ class ReceiveThread (Thread):
 
     def run(self):
 
-        while(True):
+        while (True):
             received = self.conn.recv(4096)
             received = received.decode('utf-8')
             if received == '':
                 break
             msg_toprint = received
+            # print(msg_toprint)
 
 
 class ConnectToChat(object):
@@ -50,7 +52,7 @@ class ConnectToChat(object):
             self.net = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.net.connect((self.HOST, int(self.port)))
             tmp = self.net.send(str.encode(self.bootstrap))
-            print("Connected to the chatServer.")
+            # print("Connected to the chatServer.")
         except:
             print("Connection Error \n")
             return
@@ -59,10 +61,9 @@ class ConnectToChat(object):
         t_r = ReceiveThread('Receive', self.net)
         t_r.start()
 
-        # JOIN the Global Channel for communication from the Server.
-        # message = "JOIN " + "#GLOBAL" + "\n"
-        # self.net.send(str.encode(message))
-
+        #JOIN the Global Channel for communication from the Server.
+        message = "JOIN " + "#GLOBAL" + "\n"
+        self.net.send(str.encode(message))
 
     def connectToChannel(self, game):
         """
@@ -76,7 +77,6 @@ class ConnectToChat(object):
         except:
             print("Connection lost... \n")
             return
-
 
     def leaveChannel(self, game):
         """
@@ -93,7 +93,6 @@ class ConnectToChat(object):
             return
         # print('Left: ' + message + '\n')
 
-
     def sendInChat(self, game, message):
         """
         Send a message in a chat.
@@ -102,11 +101,6 @@ class ConnectToChat(object):
         :return: None
         """
         send_msg = "POST " + game + " " + message + "\n"
-        #print(send_msg)
+        # print(send_msg)
         self.net.sendall(str.encode(send_msg))
-        #print('inviato \n')
-
-
-
-
-
+        # print('inviato \n')

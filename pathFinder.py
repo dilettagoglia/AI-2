@@ -26,8 +26,8 @@ def findPath(weightedMap, player, endx, endy):
     :return: next position coordinates
     """
 
-    for row in weightedMap:
-        print(row)
+    #for row in weightedMap:
+     #   print(row)
     grid = Grid(matrix=weightedMap)
 
     start = grid.node(player.x, player.y)

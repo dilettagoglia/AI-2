@@ -39,11 +39,12 @@ class connectToServer(object):
         response = []
 
         if abs(self.ts - time.time()) < float(self.delay):
-            # print( "sleep per : " + str(float(self.delay) - abs(self.ts - time.time())))
             time.sleep(float(self.delay) - abs(self.ts - time.time()))
-        self.ts = time.time()
+        time.sleep(self.delay)
 
         self.net.write(command.encode('utf-8') + b"\n")
+
+        self.ts = time.time()
 
         response = [text.strip() for text in self.net.read_until(b"\n").decode('utf-8').splitlines()]
 
