@@ -25,7 +25,7 @@ class ReceiveThread(Thread):
             if received == '':
                 break
             msg_toprint = received
-            # print(msg_toprint)
+            print(msg_toprint)
 
 
 class ConnectToChat(object):
@@ -63,6 +63,9 @@ class ConnectToChat(object):
 
         #JOIN the Global Channel for communication from the Server.
         message = "JOIN " + "#GLOBAL" + "\n"
+        self.net.send(str.encode(message))
+
+        message = "JOIN " + "#LEAGUE" + "\n"
         self.net.send(str.encode(message))
 
     def connectToChannel(self, game):
