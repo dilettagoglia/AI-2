@@ -25,7 +25,7 @@ class ReceiveThread(Thread):
             if received == '':
                 break
             msg_toprint = received
-            print(msg_toprint)
+            #print(msg_toprint)
 
 
 class ConnectToChat(object):

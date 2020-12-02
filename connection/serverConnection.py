@@ -40,13 +40,12 @@ class connectToServer(object):
 
         if abs(self.ts - time.time()) < float(self.delay):
             time.sleep(float(self.delay) - abs(self.ts - time.time()))
-        time.sleep(self.delay)
 
         self.net.write(command.encode('utf-8') + b"\n")
 
-        self.ts = time.time()
 
         response = [text.strip() for text in self.net.read_until(b"\n").decode('utf-8').splitlines()]
+        self.ts = time.time()
 
         # if(response[0] == "ERROR 401 Too fast"):
         #    per ora non usato perchè if True Jarvis ci chiude la socket

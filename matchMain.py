@@ -14,12 +14,14 @@ class aKarenThread(Thread):
         self.gameName = gameName
 
     def run(self):
-        tournamentName = input("Enter the name of the tournament you want to join: ")
-        self.registerToTournament(tournamentName)
-        print("You joined the tournament " + tournamentName)
-
-        matchName = input("Enter the match name you have to play (join): ")
-        self.joinMatch(matchName)
+        #tournamentName = input("Enter the name of the tournament you want to join: ")
+        self.registerToTournament("SmartCup")
+        #print("You joined the tournament " + tournamentName)
+        joined = False
+        while joined is False:
+            joined = self.karen.joinGame(self.gameName, self.name, "AI", "AI02")
+            if joined is True:
+                self.karen.waitToStart()
 
 
     def registerToTournament(self, tournamentName):
@@ -29,7 +31,7 @@ class aKarenThread(Thread):
         self.karen.joinGame(gameName, self.name, "AI", "AI02")
         self.karen.waitToStart()
 
-for i in range(0, 1):
-    x = aKarenThread("Karen-AI-2" + str(i), "test10")
-    x.start()
 
+for i in range(0, 3):
+    x = aKarenThread("Karen-AI-2" + str(i), "SmartCUP-12-1")
+    x.start()

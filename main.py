@@ -11,7 +11,7 @@ class aKarenThread(Thread):
     def __init__(self, name):
         Thread.__init__(self)
 
-        self.karen = Karen(name)
+        self.karen = Karen(name, "fuzzyStrategy")
         self.name = name
 
     def run(self):
@@ -19,13 +19,13 @@ class aKarenThread(Thread):
         self.karen.waitToStart()
 
 
-karen1 = Karen("imtheowner")
+karen1 = Karen("imtheowner", "fuzzyStrategy")
 
 
 if karen1.createGame(gameName):
     karen1.joinGame(gameName, "imtheowner", "AI", "-")
 
-    for i in range(1, 20):
+    for i in range(1, 30):
         x = aKarenThread("pinko" + str(i))
         x.start()
 

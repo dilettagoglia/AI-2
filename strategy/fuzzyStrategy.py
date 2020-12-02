@@ -1,6 +1,4 @@
-import configparser
-
-from pathFinder import findPath
+from strategy.pathFinder import findPath
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
@@ -102,7 +100,6 @@ def FuzzyControlSystem(me, game, mapSize):
     -useTheBarrier 20-30
     -goToFlag, 30-40
     -goToKill, 40-50
-
     """
 
     # New Antecedent/Consequent objects hold universe variables and membership functions
@@ -213,6 +210,8 @@ def FuzzyControlSystem(me, game, mapSize):
 
         x = nearestRecharge[1]
         y = nearestRecharge[2]
+        print(me.name + " vado in rech" + str(x) + " " + str(y))
+
     elif outputValue in range(10, 20):
         # safe
 
@@ -222,11 +221,11 @@ def FuzzyControlSystem(me, game, mapSize):
         else:
             x = safeZoneDistance[1]
             y = safeZoneDistance[2]
+            print(me.name + " vado in safeZone" + str(x) + " " +str(y))
+
     else:
         # flag
         x = game.wantedFlagX
         y = game.wantedFlagY
 
     return x, y
-    # output visualization
-    # output.view(sim=sim)
