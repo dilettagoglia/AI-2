@@ -21,6 +21,8 @@ class Game:
         self.weightedMap = None
         self.name = gameName
         self.state = None
+        # Valori possibili: 0, 1, 2 (fase 0 senza shoot, fase 1 no ctf, fase 2 gioco normale)
+        self.stage = 0
         self.allies = dict()
         self.enemies = dict()
         self.me = None

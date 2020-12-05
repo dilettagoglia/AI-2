@@ -1,13 +1,13 @@
 import socket
 from threading import Thread
+import time
 
 
 class ReceiveThread(Thread):
     """
     Define a listener thread that wait for chat messages.
     """
-
-    def __init__(self, name, conn):
+    def __init__(self, name, conn, tmp, lista, database):
         """
         Set the basic thread parameters.
         :param name: the thread name.
@@ -16,16 +16,23 @@ class ReceiveThread(Thread):
         Thread.__init__(self)
         self.conn = conn
         self.name = name
+        self.plname = tmp
+        global db
+        global sharedList
+        sharedList = lista
+        db = database
 
     def run(self):
 
         while (True):
             received = self.conn.recv(4096)
+            ts = time.time()
             received = received.decode('utf-8')
             if received == '':
                 break
-            msg_toprint = received
-            #print(msg_toprint)
+            print('Sono ' + self.plname + ', Ricevuto: ' + received)
+            pair = (received, ts)
+            sharedList.append(pair)
 
 
 class ConnectToChat(object):
@@ -56,12 +63,7 @@ class ConnectToChat(object):
         except:
             print("Connection Error \n")
             return
-
-        # Start a new listerner Thread.
-        t_r = ReceiveThread('Receive', self.net)
-        t_r.start()
-
-        #JOIN the Global Channel for communication from the Server.
+        # JOIN the Global Channel for communication from the Server.
         message = "JOIN " + "#GLOBAL" + "\n"
         self.net.send(str.encode(message))
 
