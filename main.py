@@ -1,33 +1,42 @@
+from multiprocessing import Process
 from random import randint
-from karen import Karen
-from threading import Thread
-import time
 
-gameName = str(randint(100000, 900000))
+from karen import *
 
-
-class aKarenThread(Thread):
-
-    def __init__(self, name):
-        Thread.__init__(self)
-
-        self.karen = Karen(name, "fuzzyStrategy")
-        self.name = name
-
-    def run(self):
-        self.karen.joinGame(gameName, self.name, "AI", "AI-02")
-        self.karen.waitToStart()
+"""
+Nuovo main per creare karen multi processo e non multithreading
+"""
 
 
-karen1 = Karen("imtheowner", "fuzzyStrategy")
+def creator(name, gameName):
+    print(name)
+    k = Karen(name, 'fuzzyStrategy')
+    if k.createGame(gameName, "BQ1"):
+        k.joinGame(gameName, name, "AI", "AI-02")
+
+        time.sleep(2)
+        k.startGame()
 
 
-if karen1.createGame(gameName, "BQ3"):
-    karen1.joinGame(gameName, "imtheowner", "AI", "AI-02")
+def gamer(name, gameName):
+    print(name)
+    k = Karen(name, 'fuzzyStrategy')
+    k.joinGame(gameName, name, "AI", "AI-02")
+    result = k.waitToStart()
 
-    for i in range(1, 20):
-        x = aKarenThread("pinko" + str(i))
-        x.start()
 
+if __name__ == '__main__':
+    var = str(randint(100000, 900000))
+    process = []
+    p = (Process(target=creator, args=('KarenOwner', var)))
+    p.start()
+    process.append(p)
     time.sleep(1)
-    karen1.startGame()
+
+    for i in range(0, 1):
+        p = Process(target=gamer, args=('Karen' + str(i), var))
+        p.start()
+        process.append(p)
+
+    for p in process:
+        p.join()

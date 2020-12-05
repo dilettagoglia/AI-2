@@ -24,7 +24,6 @@ class Game:
         self.stage = 0
         self.allies = dict()
         self.enemies = dict()
-        self.me = None
 
         self.mapHeight = None
         self.mapWidth = None
@@ -40,3 +39,4 @@ class Game:
 
 
 global game
+

@@ -1,3 +1,4 @@
+from data_structure import gameStatus
 from data_structure.gameStatus import *
 from strategy.pathFinder import findPath
 import numpy as np
@@ -20,75 +21,75 @@ def fuzzyValues(me, mapSize):
     nearestEnemyDistance = mapSize
     # nearestRecharge [distance, xCoordinate, yCoordinate]
     nearestRecharge = [mapSize * 2, mapSize, mapSize]
-    for k in game.enemies.keys():
+    for k in gameStatus.game.enemies.keys():
         # for each enemy retrieve the min coordinate distance (x or y)
-        if game.enemies[k].state == "ACTIVE":
-            enemyDistances[game.enemies[k].symbol] = min(len(findPath(game.weightedMap, me, me.x, game.enemies[k].y)),
-                                                         len(findPath(game.weightedMap, me, game.enemies[k].x, me.y)))
+        if gameStatus.game.enemies[k].state == "ACTIVE":
+            enemyDistances[gameStatus.game.enemies[k].symbol] = min(len(findPath(gameStatus.game.weightedMap, me, me.x, gameStatus.game.enemies[k].y)),
+                                                         len(findPath(gameStatus.game.weightedMap, me, gameStatus.game.enemies[k].x, me.y)))
 
             # distance from the nearest enemy firing line
-            if nearestEnemyDistance > enemyDistances[game.enemies[k].symbol]:
-                nearestEnemyDistance = enemyDistances[game.enemies[k].symbol]
+            if nearestEnemyDistance > enemyDistances[gameStatus.game.enemies[k].symbol]:
+                nearestEnemyDistance = enemyDistances[gameStatus.game.enemies[k].symbol]
 
     for k in enemyDistances.keys():
         if enemyDistances[k] < int(mapSize / 6):
             num_enemies += 1
 
-    for i in range(0, len(game.serverMap[0])):
-        for j in range(0, len(game.serverMap[0])):
-            # print(game.serverMap[i][j])
-            if game.serverMap[i][j] == "$":
-                tmp = len(findPath(game.weightedMap, me, i, j))
+    for i in range(0, len(gameStatus.game.serverMap[0])):
+        for j in range(0, len(gameStatus.game.serverMap[0])):
+            # print(gameStatus.game.serverMap[i][j])
+            if gameStatus.game.serverMap[i][j] == "$":
+                tmp = len(findPath(gameStatus.game.weightedMap, me, i, j))
                 if tmp < nearestRecharge[0]:
                     nearestRecharge[0] = tmp
                     nearestRecharge[1] = j
                     nearestRecharge[2] = i
 
-    d_flag = len(findPath(game.weightedMap, me, game.wantedFlagX, game.wantedFlagY))
+    d_flag = len(findPath(gameStatus.game.weightedMap, me, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY))
 
     # d_SafeZone = 0 means that I'm in a safeZone
     # d_SafeZone = 1 or 2 means that i need to do 1 or 2 movement to be in a safeZone
-    if game.weightedMap[me.y][me.x] == 1:
+    if gameStatus.game.weightedMap[me.y][me.x] == 1:
         d_SafeZone[0] = 0
         d_SafeZone[1] = me.y
         d_SafeZone[2] = me.x
     else:
-        if game.weightedMap[me.y - 1][me.x] == 1:
+        if gameStatus.game.weightedMap[me.y - 1][me.x] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = me.y - 1
             d_SafeZone[2] = me.x
 
-        elif game.weightedMap[me.y][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[me.y][me.x - 1] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = me.y
             d_SafeZone[2] = me.x - 1
 
-        elif game.weightedMap[me.y][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[me.y][me.x + 1] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = me.y
             d_SafeZone[2] = me.x + 1
 
-        elif game.weightedMap[me.y + 1][me.x] == 1:
+        elif gameStatus.game.weightedMap[me.y + 1][me.x] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = me.y + 1
             d_SafeZone[2] = me.x
 
-        elif game.weightedMap[me.y - 1][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[me.y - 1][me.x - 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = me.y - 1
             d_SafeZone[2] = me.x - 1
 
-        elif game.weightedMap[me.y - 1][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[me.y - 1][me.x + 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = me.y - 1
             d_SafeZone[2] = me.x + 1
 
-        elif game.weightedMap[me.y + 1][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[me.y + 1][me.x - 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = me.y + 1
             d_SafeZone[2] = me.x - 1
 
-        elif game.weightedMap[me.y + 1][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[me.y + 1][me.x + 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = me.y + 1
             d_SafeZone[2] = me.x + 1
@@ -114,7 +115,7 @@ def FuzzyControlSystem(me, mapSize):
     energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
     d_flag = ctrl.Antecedent(np.arange(0, int(mapSize * 3), 1), 'd_flag')
     d_recharge = ctrl.Antecedent(np.arange(0, int(mapSize * 3), 1), 'd_recharge')
-    num_enemies = ctrl.Antecedent(np.arange(0, len(game.enemies), 1), 'num_enemies')
+    num_enemies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.enemies), 1), 'num_enemies')
     d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
     # d_barrier = ctrl.Antecedent(np.arange(0, 32, 1), 'd_barrier')
     # d_nearestEnemy = ctrl.Antecedent(np.arange(0, 32, 1), 'd_nearestEnemy')
@@ -218,24 +219,24 @@ def FuzzyControlSystem(me, mapSize):
 
         x = nearestRecharge[1]
         y = nearestRecharge[2]
-        # print(me.name + " vado in rech" + str(x) + " " + str(y))
+        print(me.name + " vado in rech" + str(x) + " " + str(y))
 
     elif outputValue in range(10, 20):
         # safe
 
         if safeZoneDistance[0] == 3:
-            x = game.wantedFlagX
-            y = game.wantedFlagY
+            x = gameStatus.game.wantedFlagX
+            y = gameStatus.game.wantedFlagY
         else:
             x = safeZoneDistance[1]
             y = safeZoneDistance[2]
-            print(me.name + " vado in safeZone" + str(x) + " " + str(y))
+            # print(me.name + " vado in safeZone" + str(x) + " " + str(y))
 
     else:
         # flag
-        x = game.wantedFlagX
-        y = game.wantedFlagY
-        # print("vado alla bandiera " + str(x) + " " + str(y))
+        x = gameStatus.game.wantedFlagX
+        y = gameStatus.game.wantedFlagY
+        # print(me.name + " vado alla bandiera " + str(x) + " " + str(y))
     # Check if i will be in safeZone after this movement
 
     return x, y, nearestEnemyDistance
