@@ -51,7 +51,7 @@ class rb_movement(movement):
 
         path = findPath(actualMap, player, endx, endy)
         if len(path) < 2:
-            return None
+            return None, None
         else:
             coordinate = path[1]
 
@@ -68,4 +68,4 @@ class rb_movement(movement):
                 elif player.y < coordinate[1]:
                     direction = "S"
 
-            return direction
+            return direction, coordinate

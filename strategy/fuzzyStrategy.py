@@ -1,3 +1,4 @@
+from data_structure.gameStatus import *
 from strategy.pathFinder import findPath
 import numpy as np
 import skfuzzy as fuzz
@@ -10,11 +11,13 @@ from skfuzzy import control as ctrl
 # a questo punto fuzzyValues restituisce a karen.fuzzystrategy le coordinate scelte.
 
 
-def fuzzyValues(me, game, mapSize):
+def fuzzyValues(me, mapSize):
     num_enemies = 0
     d_SafeZone = [mapSize, mapSize, mapSize]
+
     enemyDistances = dict()
 
+    nearestEnemyDistance = mapSize
     # nearestRecharge [distance, xCoordinate, yCoordinate]
     nearestRecharge = [mapSize * 2, mapSize, mapSize]
     for k in game.enemies.keys():
@@ -22,6 +25,10 @@ def fuzzyValues(me, game, mapSize):
         if game.enemies[k].state == "ACTIVE":
             enemyDistances[game.enemies[k].symbol] = min(len(findPath(game.weightedMap, me, me.x, game.enemies[k].y)),
                                                          len(findPath(game.weightedMap, me, game.enemies[k].x, me.y)))
+
+            # distance from the nearest enemy firing line
+            if nearestEnemyDistance > enemyDistances[game.enemies[k].symbol]:
+                nearestEnemyDistance = enemyDistances[game.enemies[k].symbol]
 
     for k in enemyDistances.keys():
         if enemyDistances[k] < int(mapSize / 6):
@@ -89,10 +96,10 @@ def fuzzyValues(me, game, mapSize):
         else:
             d_SafeZone[0] = 3
 
-    return d_flag, num_enemies, enemyDistances, nearestRecharge, me.energy, d_SafeZone
+    return d_flag, num_enemies, enemyDistances, nearestRecharge, me.energy, d_SafeZone, nearestEnemyDistance
 
 
-def FuzzyControlSystem(me, game, mapSize):
+def FuzzyControlSystem(me, mapSize):
     """
     Output values:
     -goToRecharge,  0-10
@@ -173,8 +180,9 @@ def FuzzyControlSystem(me, game, mapSize):
     # Pass inputs to the ControlSystem using Antecedent labels with Pythonic API
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
-    flagDistance, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance = fuzzyValues(me, game,
-                                                                                                             mapSize)
+    flagDistance, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance = fuzzyValues(
+        me,
+        mapSize)
 
     # print("Flag Distance " + str(flagDistance))
     # print("numberOfEnemies " + str(numberOfEnemies))
@@ -197,11 +205,11 @@ def FuzzyControlSystem(me, game, mapSize):
     except:
         # crisp case, go to flag
         print("EXCEPTION FUZZY")
-        print("Flag Distance " + str(flagDistance))
-        print("numberOfEnemies " + str(numberOfEnemies))
-        print("nearestRecharge " + str(nearestRecharge[0]))
-        print("safeZoneDistance " + str(safeZoneDistance[0]))
-        print("myEnergy " + myEnergy)
+        # print("Flag Distance " + str(flagDistance))
+        # print("numberOfEnemies " + str(numberOfEnemies))
+        # print("nearestRecharge " + str(nearestRecharge[0]))
+        # print("safeZoneDistance " + str(safeZoneDistance[0]))
+        # print("myEnergy " + myEnergy)
 
         outputValue = 25
 
@@ -210,7 +218,7 @@ def FuzzyControlSystem(me, game, mapSize):
 
         x = nearestRecharge[1]
         y = nearestRecharge[2]
-        print(me.name + " vado in rech" + str(x) + " " + str(y))
+        # print(me.name + " vado in rech" + str(x) + " " + str(y))
 
     elif outputValue in range(10, 20):
         # safe
@@ -221,11 +229,13 @@ def FuzzyControlSystem(me, game, mapSize):
         else:
             x = safeZoneDistance[1]
             y = safeZoneDistance[2]
-            print(me.name + " vado in safeZone" + str(x) + " " +str(y))
+            print(me.name + " vado in safeZone" + str(x) + " " + str(y))
 
     else:
         # flag
         x = game.wantedFlagX
         y = game.wantedFlagY
+        # print("vado alla bandiera " + str(x) + " " + str(y))
+    # Check if i will be in safeZone after this movement
 
-    return x, y
+    return x, y, nearestEnemyDistance

@@ -8,5 +8,5 @@ HOST = margot.di.unipi.it
 PORT = 8422
 
 [envParam]
-MAPSIZE = 32
+MAXWEIGHT = 32
 

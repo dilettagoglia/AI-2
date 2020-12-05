@@ -1,27 +1,29 @@
+from data_structure.gameStatus import *
+
+
 def deterministicMap(self):
     """
      CELLULAR AUTOMATA MAP. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
      :param self: Karen
-     :param actualMap: the map retrieved from the server.
      :return: a weighted map
      """
 
-    value = [int(self.mapSize / 2), int(self.mapSize / 4)]
+    value = [int(self.maxWeight / 2), int(self.maxWeight / 4)]
     walkable = ["."]
     river = ["~"]
     trap = ["!"]
     obstacles = ["#", "@"]
     recharge = ["$"]
     barrier = ["&"]
-    allies = self.game.allies.keys()
-    enemies = self.game.enemies.keys()
-    serverMap = self.game.serverMap
+    allies = game.allies.keys()
+    enemies = game.enemies.keys()
+    serverMap = game.serverMap
     weightedMap = [row[:] for row in serverMap]
 
-    def recursiveMap(i, j, rec_weightedMap, weight):
+    def recursiveMap(count, j, rec_weightedMap, weight):
         '''
         Recursive map generation. Resamble Cellular Automata decision adding weight to the map consistently with the distance from enemies
-        :param i: the horizontal coordinate
+        :param count: the horizontal coordinate
         :param j: the vertical coordinate
         :param rec_weightedMap: the map
         :param weight: the weight of being in [i:,:j] position
@@ -29,17 +31,17 @@ def deterministicMap(self):
         '''
         # da  muro a nemico
         for position in range(enemy.x, -1, -1):
-            if rec_weightedMap[i][position] != '#' and rec_weightedMap[i][position] != "&":
-                if isinstance(rec_weightedMap[i][position], int) is False:
-                    rec_weightedMap[i][position] = weight
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&":
+                if isinstance(rec_weightedMap[count][position], int) is False:
+                    rec_weightedMap[count][position] = weight
             else:
                 break
 
         # da nemico a muro
-        for position in range(enemy.x, len(rec_weightedMap[i])):
-            if rec_weightedMap[i][position] != '#' and rec_weightedMap[i][position] != "&":
-                if isinstance(rec_weightedMap[i][position], int) is False:
-                    rec_weightedMap[i][position] = weight
+        for position in range(enemy.x, len(rec_weightedMap[count])):
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&":
+                if isinstance(rec_weightedMap[count][position], int) is False:
+                    rec_weightedMap[count][position] = weight
             else:
                 break
 
@@ -62,28 +64,28 @@ def deterministicMap(self):
 
     # ---------------------------------------------------------------------------------------------------
     # For each enemy that is still alive, create a weighted map assigning value to all the position in the map around the enemy
-    for enemykey in self.game.enemies.keys():
-        enemy = self.game.enemies.get(enemykey)
+    for enemykey in game.enemies.keys():
+        enemy = game.enemies.get(enemykey)
         if enemy.state == "ACTIVE":
             # First call to assign weight to the enemy's 'x column' and 'y row' coordinate
-            weightedMap = recursiveMap(enemy.y, enemy.x, weightedMap, int(self.mapSize / 2))
+            weightedMap = recursiveMap(enemy.y, enemy.x, weightedMap, int(self.maxWeight / 2))
 
             # Recursive calls giving the already weighted to assign weight to all the coordinate around the enemy player
             if enemy.y - 1 >= 0:
                 if enemy.x - 1 >= 0:
-                    weightedMap = recursiveMap(enemy.y - 1, enemy.x - 1, weightedMap, int(self.mapSize / 4))
+                    weightedMap = recursiveMap(enemy.y - 1, enemy.x - 1, weightedMap, int(self.maxWeight / 4))
                 if enemy.x + 1 < len(weightedMap[0]):
-                    weightedMap = recursiveMap(enemy.y - 1, enemy.x + 1, weightedMap, int(self.mapSize / 4))
+                    weightedMap = recursiveMap(enemy.y - 1, enemy.x + 1, weightedMap, int(self.maxWeight / 4))
 
             if enemy.y + 1 < len(weightedMap[0]):
                 if enemy.x - 1 >= 0:
-                    weightedMap = recursiveMap(enemy.y + 1, enemy.x - 1, weightedMap, int(self.mapSize / 4))
+                    weightedMap = recursiveMap(enemy.y + 1, enemy.x - 1, weightedMap, int(self.maxWeight / 4))
                 if enemy.x + 1 < len(weightedMap[0]):
-                    weightedMap = recursiveMap(enemy.y + 1, enemy.x + 1, weightedMap, int(self.mapSize / 4))
+                    weightedMap = recursiveMap(enemy.y + 1, enemy.x + 1, weightedMap, int(self.maxWeight / 4))
 
     # For each position, assign different weight considering their nature
-    for i in range(0, len(serverMap[0])):
-        for j in range(0, len(serverMap[0])):
+    for i in range(0, game.mapHeight):
+        for j in range(0, game.mapWidth):
 
             if weightedMap[i][j] in value:
                 None
@@ -92,10 +94,10 @@ def deterministicMap(self):
                 weightedMap[i][j] = 1
 
             elif serverMap[i][j] in river:
-                weightedMap[i][j] = int(self.mapSize / 3)
+                weightedMap[i][j] = int(self.maxWeight / 3)
 
             elif serverMap[i][j] in trap:
-                weightedMap[i][j] = int(self.mapSize)
+                weightedMap[i][j] = int(self.maxWeight)
 
             elif serverMap[i][j] in obstacles:
                 weightedMap[i][j] = 0
@@ -106,10 +108,10 @@ def deterministicMap(self):
             elif serverMap[i][j] in barrier:
                 weightedMap[i][j] = 0
 
-            elif serverMap[i][j] == self.game.wantedFlagName:
+            elif serverMap[i][j] == game.wantedFlagName:
                 weightedMap[i][j] = 1
 
-            elif serverMap[i][j] == self.game.toBeDefendedFlagName:
+            elif serverMap[i][j] == game.toBeDefendedFlagName:
                 weightedMap[i][j] = 0
 
             elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][j] == self.me.symbol:

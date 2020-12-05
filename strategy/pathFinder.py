@@ -14,7 +14,31 @@ from pathfinding.finder.ida_star import IDAStarFinder
 
 # You can use negative values to describe different types of obstacles.
 # It does not make a difference for the path finding algorithm but it might be useful for your later map evaluation.
+def findPath(weightedMap, startx, starty, endx, endy):
+    """
+    Apply an algorithm for path finding
+    :param weightedMap: the weighted and parsed map
+    :param player: the AI player object.
+    :param endx: the goal x coordinate.
+    :param endy: the goal y cooridnate.
+    :return: next position coordinates
+    """
 
+
+    grid = Grid(matrix=weightedMap)
+
+    start = grid.node(startx, starty)
+    end = grid.node(endx, endy)
+
+    finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+    path, runs = finder.find_path(start, end, grid)
+    # The find_path function does not only return you the path from the start to the end point it also returns the number
+    # of times the algorithm needed to be called until a way was found.
+
+    # print('operations:', runs, 'path length:', len(path))
+    # print(grid.grid_str(path=path, start=start, end=end))
+
+    return path
 
 
 
