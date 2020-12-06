@@ -1,13 +1,15 @@
 import socket
-from threading import Thread
+from threading import Thread, Lock, RLock
 import time
+
+from data_structure import gameStatus
 
 
 class ReceiveThread(Thread):
     """
     Define a listener thread that wait for chat messages.
     """
-    def __init__(self, name, conn, tmp, lista, database):
+    def __init__(self, name, conn, tmp):
         """
         Set the basic thread parameters.
         :param name: the thread name.
@@ -17,10 +19,13 @@ class ReceiveThread(Thread):
         self.conn = conn
         self.name = name
         self.plname = tmp
-        global db
-        global sharedList
-        sharedList = lista
-        db = database
+        #global db
+        #global sharedList
+        #sharedList = lista
+        #db = database
+        gameStatus.mutex_ga = RLock()
+        gameStatus.mutex_db = RLock()
+        gameStatus.mutex_sl = RLock()
 
     def run(self):
 
@@ -32,7 +37,11 @@ class ReceiveThread(Thread):
                 break
             print('Sono ' + self.plname + ', Ricevuto: ' + received)
             pair = (received, ts)
-            sharedList.append(pair)
+            gameStatus.mutex_sl.acquire()
+            #print("Thread receiver lock presa \n")
+            gameStatus.sharedList.append(pair)
+            gameStatus.mutex_sl.release()
+            #print("Thread receiver lock lasciata \n")
 
 
 class ConnectToChat(object):

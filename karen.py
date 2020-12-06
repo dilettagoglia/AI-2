@@ -2,8 +2,10 @@ import configparser
 from data_structure import gameStatus
 from data_structure.gameStatus import *
 from connection.serverConnection import *
-from connection.chatConnection import ConnectToChat
+from connection.chatConnection import ConnectToChat, ReceiveThread
 import re
+
+from social_deduction.chatAnalyzer import ChatAnalysisThread
 from strategy.fuzzyStrategy import FuzzyControlSystem
 from strategy.lowLevelStrategy import lowLevelStrategy
 from strategy.deterministicMap import deterministicMap
@@ -26,6 +28,8 @@ class Karen:
         self.me = Player(name)
 
         gameStatus.game = Game(None)
+        gameStatus.db = DecisionsDB()
+        gameStatus.sharedList = []
 
         self.me.movement = rb_movement(movement)
         self.strategyType = strategyType
@@ -49,6 +53,9 @@ class Karen:
         self.ChatPORT = config['chatParam']['PORT']
 
         self.chatSocket = ConnectToChat(self.ChatHOST, self.ChatPORT, self.me.name)
+        t_r = ReceiveThread('Receive', self.chatSocket.net, self.me.name)
+        t_r.start()
+
 
     def createGame(self, gameName, flags):
         """
@@ -57,12 +64,13 @@ class Karen:
         :param gameName: uniquely identifies the gameStatus.game.
         :return: True if created, False ow.
         """
-
+        print('Creo game')
         # A Karen can play one game at a time. Game encapsulate all the information about the map and other players
         if flags is not None:
-            response = self.serverSocket.send("NEW " + gameName + " "+flags)
+            response = self.serverSocket.send("NEW " + gameName + " " +flags)
         else:
             response = self.serverSocket.send("NEW " + gameName)
+        print('Risposta server: ' + str(response))
         if response[0] == "OK Created":
             gameStatus.game.name = gameName
             print(self.me.name + " created a game room: " + gameName)
@@ -133,6 +141,10 @@ class Karen:
         :return: True if the game started, False ow.
         """
         self.lookStatus()
+
+        threadino = ChatAnalysisThread(self.me.name)
+        threadino.start()
+
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
         if response[0] == 'OK Game started':
@@ -154,9 +166,11 @@ class Karen:
                 # Parse information about the Game
                 if response[s].startswith("GA:"):
                     row = re.split(' |=', response[s])
+                    gameStatus.mutex_ga.acquire()
                     gameStatus.game.name = row[2]
                     gameStatus.game.state = row[4]
                     gameStatus.game.size = row[6]
+                    gameStatus.mutex_ga.release()
 
                 # Parse information about Karen
                 if response[s].startswith("ME:"):
@@ -178,7 +192,9 @@ class Karen:
                         self.me.y = int(row[10])
                         self.me.state = row[12]
                     # Not Karen, update information of other players
+
                     else:
+                        gameStatus.mutex_ga.acquire()
                         if gameStatus.game.allies.get(row[2]) is None and gameStatus.game.enemies.get(row[2]) is None:
                             pl = Player(row[4])
                             pl.symbol = row[2]
@@ -201,6 +217,8 @@ class Karen:
                             gameStatus.game.enemies.get(row[2]).x = int(row[8])
                             gameStatus.game.enemies.get(row[2]).y = int(row[10])
                             gameStatus.game.enemies.get(row[2]).state = row[12]
+
+                        gameStatus.mutex_ga.release()
 
             return True
 

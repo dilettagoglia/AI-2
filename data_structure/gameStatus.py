@@ -1,3 +1,4 @@
+from data_structure.socialDedDB import *
 class Player:
 
     def __init__(self, name):
@@ -39,4 +40,9 @@ class Game:
 
 
 global game
+global mutex_ga
+global db
+global mutex_db
+global sharedList
+global mutex_sl
 
