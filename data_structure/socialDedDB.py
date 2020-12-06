@@ -1,3 +1,17 @@
+class DecisionsDB:
+    def __init__(self):
+        self.playerList = dict()  # popolata come player. Inserito in game?
+
+
+class SD_Player:
+    def __init__(self, name, team):
+        self.name = name
+        self.team = team
+        self.turingScore = 0.5
+        self.sdScore = 0
+        self.kills = []
+        self.messages = []
+
 '''
 struttura decisions_db:
     lista di player_sd
@@ -20,15 +34,3 @@ si avrà un dizionario
 '''
 
 
-class DecisionsDB:
-    def __init__(self):
-        self.playerList = dict()  # popolata come player. Inserito in game?
-
-
-class SD_Player:
-    def __init__(self, name):
-        self.name = name
-        self.turingScore = 0.5
-        self.sdScore = 0
-        self.kills = []
-        self.messages = []
