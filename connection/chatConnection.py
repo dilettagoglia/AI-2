@@ -19,16 +19,8 @@ class ReceiveThread(Thread):
         self.conn = conn
         self.name = name
         self.plname = tmp
-        #global db
-        #global sharedList
-        #sharedList = lista
-        #db = database
-        gameStatus.mutex_ga = RLock()
-        gameStatus.mutex_db = RLock()
-        gameStatus.mutex_sl = RLock()
 
     def run(self):
-
         while (True):
             received = self.conn.recv(4096)
             ts = time.time()
@@ -37,11 +29,7 @@ class ReceiveThread(Thread):
                 break
             print('Sono ' + self.plname + ', Ricevuto: ' + received)
             pair = (received, ts)
-            gameStatus.mutex_sl.acquire()
-            #print("Thread receiver lock presa \n")
             gameStatus.sharedList.append(pair)
-            gameStatus.mutex_sl.release()
-            #print("Thread receiver lock lasciata \n")
 
 
 class ConnectToChat(object):
@@ -101,7 +89,6 @@ class ConnectToChat(object):
         message = "LEAVE " + game + '\n'
         try:
             self.net.send(str.encode(message))
-
         except:
             print("Connection lost... \n")
             return

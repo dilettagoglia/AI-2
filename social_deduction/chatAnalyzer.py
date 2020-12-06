@@ -3,28 +3,34 @@ import re
 from data_structure.socialDedDB import *
 from data_structure.gameStatus import *
 from data_structure import gameStatus
+import time
 
 
 class ChatAnalysisThread(Thread):
     def __init__(self, name):
         Thread.__init__(self)
         self.name = name
-        # global db
-        # global sharedList
-        # sharedList = lista
-        # db = database
+        # copio tutti i player nel db per la social ded
+        for i in gameStatus.game.enemies.keys():
+            name = gameStatus.game.enemies.get(i).name
+            team = gameStatus.game.enemies.get(i).team
+            pl = SD_Player(name, team)
+            gameStatus.db.playerList[name] = pl
+        for i in gameStatus.game.allies.keys():
+            name = gameStatus.game.allies.get(i).name
+            team = gameStatus.game.allies.get(i).team
+            pl = SD_Player(name, team)
+            gameStatus.db.playerList[name] = pl
 
     def run(self):
         while True:
             if len(gameStatus.sharedList) > 0:
-                gameStatus.mutex_sl.acquire()
                 received = gameStatus.sharedList.pop()  # è coppia stringa timestamp
-                gameStatus.mutex_sl.release()
                 received_str = received[0]
                 received_time = received[1]
                 # print("dentro thread hestore: " + received_str)
                 tmp = re.split(' |\n', received_str)
-                # print(gameStatus.game.enemies)
+                #print(gameStatus.game.enemies)
                 if tmp[0] == '#GLOBAL':
                     if tmp[1] == '@GameServer':
                         None
@@ -33,75 +39,72 @@ class ChatAnalysisThread(Thread):
                     if tmp[1] == '@GameServer':
                         # notifiche del server relative alla partita
                         if tmp[2] == 'Now':
-                            gameStatus.mutex_ga.acquire()
-                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
                             gameStatus.game.state = 'ACTIVE'
-                            # print('Paritta iniziata: ' + str(gameStatus.game.state))
-                            gameStatus.mutex_ga.release()
                         if tmp[2] == 'Game':
-                            gameStatus.mutex_ga.acquire()
-                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
                             gameStatus.game.state = 'FINISHED'
-                            # print('PArtita dinita : ' + str(gameStatus.game.state))
-                            gameStatus.mutex_ga.release()
                         if tmp[2] == 'Hunting':
-                            gameStatus.mutex_ga.acquire()
-                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.stage) )
                             gameStatus.game.stage = 1
-                            # print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
-                            gameStatus.mutex_ga.release()
                             # 654324 @GameServer Hunting season open!
                         if tmp[2] == 'You':
-                            gameStatus.mutex_ga.acquire()
                             gameStatus.game.stage = 2
-                            # print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
-                            gameStatus.mutex_ga.release()
                             # 104223 @GameServer You can now catch the flag!
                         if tmp[3] == 'hit':
                             # 654324 @GameServer pinko2 hit pinko
-                            # aggiungo W a lista killed di pinko2
-                            gameStatus.mutex_db.acquire()
+                            # aggiungo pinko a lista killed di pinko2
                             if gameStatus.db.playerList.get(tmp[2]) is None:
-                                pl = SD_Player(tmp[2])
+                                trovato = 0
+                                team = None
+                                for i in gameStatus.game.enemies.keys():
+                                    if gameStatus.game.enemies.get(i).name == tmp[2]:
+                                        team = gameStatus.game.enemies.get(i).team
+                                        trovato = 1
+                                        break
+                                if trovato == 0:
+                                    for i in gameStatus.game.allies.keys():
+                                        if gameStatus.game.allies.get(i).name == tmp[2]:
+                                            team = gameStatus.game.allies.get(i).team
+                                            break
+                                pl = SD_Player(tmp[2], team)
                                 gameStatus.db.playerList[tmp[2]] = pl  # aggiungi chiave al dizionario
                             gameStatus.db.playerList.get(tmp[2]).kills.append((tmp[4], received_time))
-                            gameStatus.mutex_db.release()
 
-                            trovato = 0
-                            gameStatus.mutex_ga.acquire()
-                            # print('nemici presenti: ' + gameStatus.game.enemies + '\n')
-                            # print('nome nemico: ' + gameStatus.game.enemies.get('a').name + '\n')
-                            # if tmp[4] in gameStatus.game.enemies:
+                            trovato1 = 0
                             for i in gameStatus.game.enemies.keys():
                                 # scorri per trovare quello con lo stesso nome
                                 if gameStatus.game.enemies.get(i).name == tmp[4]:
                                     gameStatus.game.enemies.get(i).state = 'KILLED'
-                                    # print('MORTOOOO ' + gameStatus.game.enemies.get(i).state + '\n')
-                                    trovato = 1
-                            if trovato == 0:
+                                    trovato1 = 1
+                            if trovato1 == 0:
                                 for i in gameStatus.game.allies.keys():
                                     # scorri per trovare quello con lo stesso nome
                                     if gameStatus.game.allies.get(i).name == tmp[4]:
                                         gameStatus.game.allies.get(i).state = 'KILLED'
-                                        # print('MORTOOOO ' + gameStatus.game.allies.get(i).state + '\n')
-                                        trovato = 1
                             # aggiorna status del giocatore ucciso in MORTO
-                            gameStatus.mutex_ga.release()
 
                     else:
                         # messaggi player
-                        gameStatus.mutex_db.acquire()
                         if gameStatus.db.playerList.get(tmp[1]) is None:
-                            pl = SD_Player(tmp[1])
+                            trovato = 0
+                            team = None
+                            for i in gameStatus.game.enemies.keys():
+                                if gameStatus.game.enemies.get(i).name == tmp[1]:
+                                    team = gameStatus.game.enemies.get(i).team
+                                    trovato = 1
+                                    break
+                            if trovato == 0:
+                                for i in gameStatus.game.allies.keys():
+                                    if gameStatus.game.allies.get(i).name == tmp[1]:
+                                        team = gameStatus.game.allies.get(i).team
+                                        trovato = 1
+                                        break
+                            pl = SD_Player(tmp[1], team)
                             gameStatus.db.playerList[tmp[1]] = pl  # aggiungi chiave al dizionario
                         # cerco nel decisionDB il player corrispondente e aggiungo alla lista di messaggi inviati il messaggio
                         gameStatus.db.playerList.get(tmp[1]).messages.append((received_str, received_time))
-                        # for i in gameStatus.db.playerList:
-                        # print(gameStatus.db.playerList.get(i).messages)
-                        gameStatus.mutex_db.release()
+                        #for i in gameStatus.db.playerList:
+                            #print(gameStatus.db.playerList.get(i).messages)
 
 
-# spawnati in creazione di karen
 class SocialDeductionThread(Thread):
     def __init__(self):
         Thread.__init__(self)
@@ -128,7 +131,24 @@ class SocialDeductionThread(Thread):
                 avvia un voto
                 vota quello con punteggio più alto
             '''
-            None
+            # controlla che abbia ucciso compagni di squadra
+            for i in gameStatus.db.playerList.keys():
+                for j in gameStatus.db.playerList.get(i).kills:
+                    j_name = gameStatus.db.playerList.get(i).kills[j][0]
+                    j_time = gameStatus.db.playerList.get(i).kills[j][1]
+                    if gameStatus.db.playerList.get(i).team is not None and gameStatus.db.playerList.get(j_name).team is not None:
+                        if gameStatus.db.playerList.get(i).team == gameStatus.db.playerList.get(j_name).team:
+                            gameStatus.db.playerList.get(i).sdScore += 0.2
+
+            # altre cose poi
+            #startvote (poi)
+            #if gameStatus.db.playerList.get(i).sdScore > 0.8:
+             #   None
+                # setta un flag globale che dice a karen se votare?
+                # karen a ogni iter controlla la variabile e se c'è qualcosa fa la votazione
+
+
+
 
 
 class TuringTestThread(Thread):
@@ -154,5 +174,24 @@ class TuringTestThread(Thread):
                 metti che è HU:
             if (turingScore) < 0.2:
                 metti che è AI
-            '''
-            None
+           
+'''
+            time.sleep(5)
+            count = 0
+            for i in gameStatus.db.playerList.keys():
+                for j in gameStatus.db.playerList.get(i).messages:
+                    for z in gameStatus.db.playerList.get(i).messages:
+                        if j[0] == z[0] & j[1] != z[1]:
+                            count = count + 1
+                            gameStatus.db.playerList.get(i).turingScore += 0.1
+                if count <= len(gameStatus.db.playerList.get(i).messages):
+                    gameStatus.db.playerList.get(i).turingScore -= 0.1
+
+                if gameStatus.db.playerList.get(i).turingScore > 0.8:
+                    None
+                    # setta un flag globale che dice a karen se votare?
+                    # karen a ogni iter controlla la variabile e se c'è qualcosa fa la votazione
+
+                if gameStatus.db.playerList.get(i).turingScore < 0.2:
+                    None
+                    # setta un flag globale che dice a karen se votare?

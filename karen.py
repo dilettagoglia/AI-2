@@ -160,20 +160,16 @@ class Karen:
         Retrieve information about the game status and of all the player (allies and enemies) in that room.
         :return: True if information updated, False ow.
         """
-        gameStatus.mutex_ga.acquire()
         response = self.serverSocket.send(gameStatus.game.name + " STATUS")
-        gameStatus.mutex_ga.release()
 
         if response[0] == 'OK LONG':
             for s in range(0, len(response)):
                 # Parse information about the Game
                 if response[s].startswith("GA:"):
                     row = re.split(' |=', response[s])
-                    gameStatus.mutex_ga.acquire()
                     gameStatus.game.name = row[2]
                     gameStatus.game.state = row[4]
                     gameStatus.game.size = row[6]
-                    gameStatus.mutex_ga.release()
 
                 # Parse information about Karen
                 if response[s].startswith("ME:"):
@@ -197,7 +193,6 @@ class Karen:
                     # Not Karen, update information of other players
 
                     else:
-                        gameStatus.mutex_ga.acquire()
                         if gameStatus.game.allies.get(row[2]) is None and gameStatus.game.enemies.get(row[2]) is None:
                             pl = Player(row[4])
                             pl.symbol = row[2]
@@ -220,9 +215,6 @@ class Karen:
                             gameStatus.game.enemies.get(row[2]).x = int(row[8])
                             gameStatus.game.enemies.get(row[2]).y = int(row[10])
                             gameStatus.game.enemies.get(row[2]).state = row[12]
-
-                        gameStatus.mutex_ga.release()
-
             return True
 
         else:
