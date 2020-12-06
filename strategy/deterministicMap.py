@@ -32,7 +32,7 @@ def deterministicMap(me, maxWeight):
         """
         # da  muro a nemico
         for position in range(enemy.x, -1, -1):
-            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&":
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[count][position], int) is False:
                     rec_weightedMap[count][position] = weight
             else:
@@ -40,7 +40,7 @@ def deterministicMap(me, maxWeight):
 
         # da nemico a muro
         for position in range(enemy.x, len(rec_weightedMap[count])):
-            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&":
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[count][position], int) is False:
                     rec_weightedMap[count][position] = weight
             else:
@@ -48,14 +48,14 @@ def deterministicMap(me, maxWeight):
 
         # Controllo per colonne
         for position in range(enemy.y, -1, -1):
-            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&":
+            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[position][j], int) is False:
                     rec_weightedMap[position][j] = weight
             else:
                 break
 
         for position in range(enemy.y, len(rec_weightedMap[j])):
-            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&":
+            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[position][j], int) is False:
                     rec_weightedMap[position][j] = weight
             else:

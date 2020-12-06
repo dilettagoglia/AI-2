@@ -4,14 +4,15 @@ from data_structure.socialDedDB import *
 from data_structure.gameStatus import *
 from data_structure import gameStatus
 
+
 class ChatAnalysisThread(Thread):
     def __init__(self, name):
         Thread.__init__(self)
         self.name = name
-        #global db
-        #global sharedList
-        #sharedList = lista
-        #db = database
+        # global db
+        # global sharedList
+        # sharedList = lista
+        # db = database
 
     def run(self):
         while True:
@@ -23,7 +24,7 @@ class ChatAnalysisThread(Thread):
                 received_time = received[1]
                 # print("dentro thread hestore: " + received_str)
                 tmp = re.split(' |\n', received_str)
-                #print(gameStatus.game.enemies)
+                # print(gameStatus.game.enemies)
                 if tmp[0] == '#GLOBAL':
                     if tmp[1] == '@GameServer':
                         None
@@ -33,27 +34,27 @@ class ChatAnalysisThread(Thread):
                         # notifiche del server relative alla partita
                         if tmp[2] == 'Now':
                             gameStatus.mutex_ga.acquire()
-                            #print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
+                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
                             gameStatus.game.state = 'ACTIVE'
-                            #print('Paritta iniziata: ' + str(gameStatus.game.state))
+                            # print('Paritta iniziata: ' + str(gameStatus.game.state))
                             gameStatus.mutex_ga.release()
                         if tmp[2] == 'Game':
                             gameStatus.mutex_ga.acquire()
-                            #print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
+                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.state))
                             gameStatus.game.state = 'FINISHED'
-                            #print('PArtita dinita : ' + str(gameStatus.game.state))
+                            # print('PArtita dinita : ' + str(gameStatus.game.state))
                             gameStatus.mutex_ga.release()
                         if tmp[2] == 'Hunting':
                             gameStatus.mutex_ga.acquire()
-                            #print("PRIMA di aggiornamento: " + str(gameStatus.game.stage) )
+                            # print("PRIMA di aggiornamento: " + str(gameStatus.game.stage) )
                             gameStatus.game.stage = 1
-                            #print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
+                            # print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
                             gameStatus.mutex_ga.release()
                             # 654324 @GameServer Hunting season open!
                         if tmp[2] == 'You':
                             gameStatus.mutex_ga.acquire()
                             gameStatus.game.stage = 2
-                            #print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
+                            # print('PASSATI 7 secondi: ' + str(gameStatus.game.stage))
                             gameStatus.mutex_ga.release()
                             # 104223 @GameServer You can now catch the flag!
                         if tmp[3] == 'hit':
@@ -68,21 +69,21 @@ class ChatAnalysisThread(Thread):
 
                             trovato = 0
                             gameStatus.mutex_ga.acquire()
-                            #print('nemici presenti: ' + gameStatus.game.enemies + '\n')
-                            #print('nome nemico: ' + gameStatus.game.enemies.get('a').name + '\n')
-                            #if tmp[4] in gameStatus.game.enemies:
+                            # print('nemici presenti: ' + gameStatus.game.enemies + '\n')
+                            # print('nome nemico: ' + gameStatus.game.enemies.get('a').name + '\n')
+                            # if tmp[4] in gameStatus.game.enemies:
                             for i in gameStatus.game.enemies.keys():
                                 # scorri per trovare quello con lo stesso nome
                                 if gameStatus.game.enemies.get(i).name == tmp[4]:
                                     gameStatus.game.enemies.get(i).state = 'KILLED'
-                                    #print('MORTOOOO ' + gameStatus.game.enemies.get(i).state + '\n')
+                                    # print('MORTOOOO ' + gameStatus.game.enemies.get(i).state + '\n')
                                     trovato = 1
                             if trovato == 0:
                                 for i in gameStatus.game.allies.keys():
                                     # scorri per trovare quello con lo stesso nome
                                     if gameStatus.game.allies.get(i).name == tmp[4]:
                                         gameStatus.game.allies.get(i).state = 'KILLED'
-                                        #print('MORTOOOO ' + gameStatus.game.allies.get(i).state + '\n')
+                                        # print('MORTOOOO ' + gameStatus.game.allies.get(i).state + '\n')
                                         trovato = 1
                             # aggiorna status del giocatore ucciso in MORTO
                             gameStatus.mutex_ga.release()
@@ -95,8 +96,8 @@ class ChatAnalysisThread(Thread):
                             gameStatus.db.playerList[tmp[1]] = pl  # aggiungi chiave al dizionario
                         # cerco nel decisionDB il player corrispondente e aggiungo alla lista di messaggi inviati il messaggio
                         gameStatus.db.playerList.get(tmp[1]).messages.append((received_str, received_time))
-                        #for i in gameStatus.db.playerList:
-                            #print(gameStatus.db.playerList.get(i).messages)
+                        # for i in gameStatus.db.playerList:
+                        # print(gameStatus.db.playerList.get(i).messages)
                         gameStatus.mutex_db.release()
 
 

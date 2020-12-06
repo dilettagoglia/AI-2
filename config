@@ -1,7 +1,7 @@
 [connectionParam]
 HOST = margot.di.unipi.it
 PORT = 8421
-DELAY = 0.51
+DELAY = 0.5
 
 [chatParam]
 HOST = margot.di.unipi.it
