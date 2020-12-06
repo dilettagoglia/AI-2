@@ -231,13 +231,13 @@ def FuzzyControlSystem(me, mapSize):
         else:
             x = safeZoneDistance[1]
             y = safeZoneDistance[2]
-            # print(me.name + " vado in safeZone" + str(x) + " " + str(y))
+            print(me.name + " vado in safeZone" + str(x) + " " + str(y))
 
     else:
         # flag
         x = gameStatus.game.wantedFlagX
         y = gameStatus.game.wantedFlagY
-        # print(me.name + " vado alla bandiera " + str(x) + " " + str(y))
+        print(me.name + " vado alla bandiera " + str(x) + " " + str(y))
     # Check if i will be in safeZone after this movement
 
     return x, y, nearestEnemyDistance

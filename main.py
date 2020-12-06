@@ -12,7 +12,7 @@ def creator(name, gameName):
     print(name)
     k = Karen(name, 'fuzzyStrategy')
     time.sleep(0.5)
-    if k.createGame(gameName, "TBQ1"):
+    if k.createGame(gameName, "BQ1"):
         k.joinGame(gameName, name, "AI", "AI-02")
         while True:
             time.sleep(2)
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     process.append(p)
     time.sleep(1)
 
-    for i in range(0, 25):
+    for i in range(0, 5):
         p = Process(target=gamer, args=('Karen' + str(i), var))
         p.start()
         process.append(p)

@@ -410,11 +410,10 @@ class Karen:
                 # endx, endy, nearestEnemyDistance = FuzzyControlSystemSecondStage(self.me, game, self.maxWeight)
                 # else:
                 endx, endy, nearestEnemyDistance = FuzzyControlSystem(self.me, self.maxWeight)
-
             else:
 
                 endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(self.me, self.maxWeight)
-
+                print(self.me.name + " impostor")
             # Avoid useless LOOK if I can't die moving
             if int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
@@ -433,6 +432,7 @@ class Karen:
                     nextActions = lowLevelStrategy(self, endx, endy)
                 else:
                     nextActions = lowLevelStrategyImpostor(self, endx, endy)
+                    print(self.me.name + " impostor")
 
                 for (action, direction) in nextActions:
                     if action == "move":
