@@ -12,12 +12,10 @@ class Player:
         self.loyalty = None
         self.x = None
         self.y = None
-
         # in futuro per le strategy potremmo considerare eventuali variabili come :isInTheRiver (cosi so se puo spararmi) etc.
 
 
 class Game:
-
     def __init__(self, gameName):
         self.name = gameName
         self.state = None
@@ -40,9 +38,6 @@ class Game:
 
 
 global game
-global mutex_ga
 global db
-global mutex_db
 global sharedList
-global mutex_sl
 
