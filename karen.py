@@ -254,6 +254,14 @@ class Karen:
 
                     # Used only the first time that Karen looks at the map. Find FLAGS position
                     elif firstTime is True:
+                        
+                        wallx = 0
+                        wally = 0
+                        if splitted[j] == "#":
+                            wallx = j
+                            wally = i
+                            gameStatus.game.walls.append([wallx, wally])
+                            # print('Muri :' + str(gameStatus.game.walls))
 
                         if splitted[j] == "x" and gameStatus.game.me.symbol.isupper():
                             gameStatus.game.wantedFlagName = "x"
