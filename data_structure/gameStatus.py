@@ -21,6 +21,7 @@ class Game:
         self.state = None
         # Valori possibili: 0, 1, 2 (fase 0 senza shoot, fase 1 no ctf, fase 2 gioco normale)
         self.stage = 0
+        self.me = None
         self.allies = dict()
         self.enemies = dict()
 

@@ -2,7 +2,7 @@ from data_structure import gameStatus
 from data_structure.gameStatus import *
 
 
-def deterministicMap(me, maxWeight):
+def deterministicMap(maxWeight):
     """
      CELLULAR AUTOMATA MAP. Discourage Karen to allign with enemies. If there is no other way, go and shoot.
      :param me: my info as AI
@@ -115,7 +115,7 @@ def deterministicMap(me, maxWeight):
             elif serverMap[i][j] == gameStatus.game.toBeDefendedFlagName:
                 weightedMap[i][j] = 0
 
-            elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][j] == me.symbol:
+            elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][j] == gameStatus.game.me.symbol:
                 weightedMap[i][j] = 1
 
     return weightedMap

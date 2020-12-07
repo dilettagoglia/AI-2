@@ -26,7 +26,7 @@ class ChatAnalysisThread(Thread):
     def run(self):
         while True:
             if len(gameStatus.sharedList) > 0:
-                time.sleep(0.3)
+                time.sleep(0.2)
                 received = gameStatus.sharedList.pop()  # è coppia stringa timestamp
                 received_str = received[0]
                 received_time = received[1]
@@ -51,11 +51,12 @@ class ChatAnalysisThread(Thread):
                             # 104223 @GameServer You can now catch the flag!
                         if tmp[2] == 'EMERGENCY':
                             if tmp[4] == 'Called':
-                                None
+                                None #######  flag globale
                                 # EM, fai votare karen
                             if tmp[4] == 'condamned':
                                 # espulso da EM, metti a KILLED il suo stato
                                 for i in gameStatus.game.allies.keys():
+                                    ############### contollo che non sia io
                                     # scorri per trovare quello con lo stesso nome
                                     if gameStatus.game.allies.get(i).name == tmp[5]:
                                         gameStatus.game.allies.get(i).state = 'KILLED'
@@ -63,6 +64,8 @@ class ChatAnalysisThread(Thread):
                         if tmp[3] == 'hit':
                             # 654324 @GameServer pinko2 hit pinko
                             # aggiungo pinko a lista killed di pinko2
+
+                            ################ controllo che non sia io
                             if gameStatus.db.playerList.get(tmp[2]) is None:
                                 trovato = 0
                                 team = None
@@ -148,7 +151,7 @@ class SocialDeductionThread(Thread):
                         #print('\n SD dentro primo if \n')
                         if gameStatus.db.playerList.get(i).team == gameStatus.db.playerList.get(j_name).team:
                             #print('\n SD dentro secondo if \n')
-                            gameStatus.db.playerList.get(i).sdScore += 0.2
+                            gameStatus.db.playerList.get(i).sdScore += 0.2 #####normalizza in base a numero player
                             #print ('\n GIRO DI SD COMPLETO: ' + str(gameStatus.db.playerList.get(i).sdScore))
 
                         #print('\n OK SEMBRO FUNZIONARE: ' +  str(gameStatus.db.playerList.get(i).sdScore) + '\n')

@@ -25,13 +25,12 @@ class Karen:
         :return: returns nothing
         """
         # Identify the Karen as a Player
-        self.me = Player(name)
-
         gameStatus.game = Game(None)
         gameStatus.db = DecisionsDB()
         gameStatus.sharedList = []
+        gameStatus.game.me = Player(name)
 
-        self.me.movement = rb_movement(movement)
+        gameStatus.game.me.movement = rb_movement(movement)
         self.strategyType = strategyType
 
         config = configparser.ConfigParser()
@@ -52,8 +51,8 @@ class Karen:
         self.ChatHOST = config['chatParam']['HOST']
         self.ChatPORT = config['chatParam']['PORT']
 
-        self.chatSocket = ConnectToChat(self.ChatHOST, self.ChatPORT, self.me.name)
-        t_r = ReceiveThread('Receive', self.chatSocket.net, self.me.name)
+        self.chatSocket = ConnectToChat(self.ChatHOST, self.ChatPORT, gameStatus.game.me.name)
+        t_r = ReceiveThread('Receive', self.chatSocket.net, gameStatus.game.me.name)
         t_r.start()
 
 
@@ -73,7 +72,7 @@ class Karen:
 
         if response[0] == "OK Created":
             gameStatus.game.name = gameName
-            print(self.me.name + " created a game room: " + gameName)
+            print(gameStatus.game.me.name + " created a game room: " + gameName)
             return True
         else:
             print(response)
@@ -95,11 +94,11 @@ class Karen:
         else:
             response = self.serverSocket.send(gameStatus.game.name + "LEAVE" + " " + reason)
         if response[0] == "OK":
-            print(self.me.name + " leaved the game " + gameStatus.game.name)
+            print(gameStatus.game.me.name + " leaved the game " + gameStatus.game.name)
             gameStatus.game.name = None
             return True
         else:
-            print(self.me.name + ": " + response[0])
+            print(gameStatus.game.me.name + ": " + response[0])
             return False
 
     def joinGame(self, gameName, nature, role, userInfo=None):
@@ -113,10 +112,10 @@ class Karen:
         """
         # <game> JOIN <player-name> <nature> <role> <user-info>
         gameStatus.game.name = gameName
-        self.me.nature = nature
-        self.me.role = role
-        self.me.userInfo = userInfo
-        cmd = gameName + " JOIN " + self.me.name + " " + nature + " " + role
+        gameStatus.game.me.nature = nature
+        gameStatus.game.me.role = role
+        gameStatus.game.me.userInfo = userInfo
+        cmd = gameName + " JOIN " + gameStatus.game.me.name + " " + nature + " " + role
         if userInfo is not None:
             cmd += " " + userInfo
 
@@ -124,15 +123,15 @@ class Karen:
 
         if response[0].startswith("OK"):
             row = re.split(' |=', response[0])
-            self.me.team = row[2]
-            self.me.loyalty = row[4]
+            gameStatus.game.me.team = row[2]
+            gameStatus.game.me.loyalty = row[4]
 
             self.chatSocket.connectToChannel(gameStatus.game.name)
             return True
 
         else:
             gameStatus.game.name = None
-            print(self.me.name + ": " + response[0])
+            print(gameStatus.game.me.name + ": " + response[0])
             return False
 
     def startGame(self):
@@ -142,12 +141,7 @@ class Karen:
         """
         self.lookStatus()
 
-        pl = SD_Player(self.me.name, self.me.team)
-        gameStatus.db.playerList[self.me.name] = pl
-        threadino = ChatAnalysisThread(self.me.name)
-        threadino.start()
-        SD_thread = SocialDeductionThread()
-        SD_thread.start()
+
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
@@ -178,22 +172,22 @@ class Karen:
                 # Parse information about Karen
                 if response[s].startswith("ME:"):
                     row = re.split(' |=', response[s])
-                    self.me.symbol = row[2]
-                    self.me.name = row[4]
-                    self.me.team = row[6]
-                    self.me.loyalty = row[8]
-                    self.me.energy = row[10]
-                    self.me.score = row[12]
+                    gameStatus.game.me.symbol = row[2]
+                    gameStatus.game.me.name = row[4]
+                    gameStatus.game.me.team = row[6]
+                    gameStatus.game.me.loyalty = row[8]
+                    gameStatus.game.me.energy = row[10]
+                    gameStatus.game.me.score = row[12]
 
                 # Parse information about other players (allies or enemies)
                 elif response[s].startswith("PL:"):
                     row = re.split(' |=', response[s])
 
                     # Karen is also present in the PLAYER list
-                    if row[2] == self.me.symbol:
-                        self.me.x = int(row[8])
-                        self.me.y = int(row[10])
-                        self.me.state = row[12]
+                    if row[2] == gameStatus.game.me.symbol:
+                        gameStatus.game.me.x = int(row[8])
+                        gameStatus.game.me.y = int(row[10])
+                        gameStatus.game.me.state = row[12]
                     # Not Karen, update information of other players
 
                     else:
@@ -204,7 +198,7 @@ class Karen:
                             pl.x = int(row[8])
                             pl.y = int(row[10])
                             pl.state = row[12]
-                            if pl.team == self.me.team:
+                            if pl.team == gameStatus.game.me.team:
                                 gameStatus.game.allies[pl.symbol] = pl
                             else:
                                 gameStatus.game.enemies[pl.symbol] = pl
@@ -254,26 +248,26 @@ class Karen:
                     elif gameStatus.game.enemies.get(splitted[j]) is not None:
                         gameStatus.game.enemies.get(splitted[j]).x = j
                         gameStatus.game.enemies.get(splitted[j]).y = i
-                    elif self.me.symbol == splitted[j]:
-                        self.me.x = j
-                        self.me.y = i
+                    elif gameStatus.game.me.symbol == splitted[j]:
+                        gameStatus.game.me.x = j
+                        gameStatus.game.me.y = i
 
                     # Used only the first time that Karen looks at the map. Find FLAGS position
                     elif firstTime is True:
 
-                        if splitted[j] == "x" and self.me.symbol.isupper():
+                        if splitted[j] == "x" and gameStatus.game.me.symbol.isupper():
                             gameStatus.game.wantedFlagName = "x"
                             gameStatus.game.wantedFlagX = j
                             gameStatus.game.wantedFlagY = i
-                        elif splitted[j] == "x" and self.me.symbol.islower():
+                        elif splitted[j] == "x" and gameStatus.game.me.symbol.islower():
                             gameStatus.game.toBeDefendedFlagName = "x"
                             gameStatus.game.toBeDefendedFlagX = j
                             gameStatus.game.toBeDefendedFlagY = i
-                        elif splitted[j] == "X" and self.me.symbol.islower():
+                        elif splitted[j] == "X" and gameStatus.game.me.symbol.islower():
                             gameStatus.game.wantedFlagName = "X"
                             gameStatus.game.wantedFlagX = j
                             gameStatus.game.wantedFlagY = i
-                        elif splitted[j] == "X" and self.me.symbol.isupper():
+                        elif splitted[j] == "X" and gameStatus.game.me.symbol.isupper():
                             gameStatus.game.toBeDefendedFlagName = "X"
                             gameStatus.game.toBeDefendedFlagX = j
                             gameStatus.game.toBeDefendedFlagY = i
@@ -340,6 +334,12 @@ class Karen:
         :param strategyType: the type of the strategy. Defined in Karen's init
         :return: -
         """
+        pl = SD_Player(gameStatus.game.me.name, gameStatus.game.me.team)
+        gameStatus.db.playerList[gameStatus.game.me.name] = pl
+        threadino = ChatAnalysisThread(gameStatus.game.me.name)
+        threadino.start()
+        SD_thread = SocialDeductionThread()
+        SD_thread.start()
 
         if strategyType == "lowLevelStrategy":
             self.llStrategy()
@@ -362,11 +362,11 @@ class Karen:
         self.lookStatus()
 
         gameStatus.game.serverMap = self.lookAtMap(True)
-        gameStatus.game.weightedMap = deterministicMap(self.me, self.maxWeight)
+        gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
-        while gameStatus.game.state != 'FINISHED' and self.me.state != "KILLED":
+        while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
 
-            nextActions = lowLevelStrategy(self, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
+            nextActions = lowLevelStrategy(self.maxWeight, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
 
             for (action, direction) in nextActions:
                 if action == "move":
@@ -376,11 +376,11 @@ class Karen:
 
             # AGGIORNAMENTO
             gameStatus.game.serverMap = self.lookAtMap(False)
-            gameStatus.game.weightedMap = deterministicMap(self.me, self.maxWeight)
+            gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
             self.lookStatus()
 
         if gameStatus.game.state != "FINISHED":
-            print(self.me.name + " è morto.")
+            print(gameStatus.game.me.name + " è morto.")
 
         while gameStatus.game.state == "ACTIVE":
             self.lookStatus()
@@ -395,40 +395,40 @@ class Karen:
         """
 
         gameStatus.game.serverMap = self.lookAtMap(True)
-        gameStatus.game.weightedMap = deterministicMap(self.me, self.maxWeight)
+        gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
-        while gameStatus.game.state != 'FINISHED' and self.me.state != "KILLED":
+        while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
             # check the game stage and if i'm an impostor or not
-            if self.me.loyalty == self.me.team:
+            if gameStatus.game.me.loyalty == gameStatus.game.me.team:
                 # if gameStatus.game.stage == 0:
-                # endx, endy, nearestEnemyDistance = FuzzyControlSystemFirstStage(self.me, game, self.maxWeight)
+                # endx, endy, nearestEnemyDistance = FuzzyControlSystemFirstStage(gameStatus.game.me, game, self.maxWeight)
                 # elif gameStatus.game.stage == 1:
-                # endx, endy, nearestEnemyDistance = FuzzyControlSystemSecondStage(self.me, game, self.maxWeight)
+                # endx, endy, nearestEnemyDistance = FuzzyControlSystemSecondStage(gameStatus.game.me, game, self.maxWeight)
                 # else:
-                endx, endy, nearestEnemyDistance = FuzzyControlSystem(self.me, self.maxWeight)
+                endx, endy, nearestEnemyDistance = FuzzyControlSystem(gameStatus.game.me, self.maxWeight)
             else:
 
-                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(self.me, self.maxWeight)
-                print(self.me.name + " impostor")
+                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(gameStatus.game.me, self.maxWeight)
+                print(gameStatus.game.me.name + " impostor")
             # Avoid useless LOOK if I can't die moving
             if int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
 
                     try:
-                        direction, coordinates = self.me.movement.move(gameStatus.game.weightedMap, self.me, endx, endy)
+                        direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy)
                         if direction is not None:
                             if self.move(direction):
-                                self.me.x = coordinates[0]
-                                self.me.y = coordinates[1]
+                                gameStatus.game.me.x = coordinates[0]
+                                gameStatus.game.me.y = coordinates[1]
                     except():
                         print("Exception generated by movement.move")
             else:
-                if self.me.loyalty == self.me.team:
+                if gameStatus.game.me.loyalty == gameStatus.game.me.team:
 
-                    nextActions = lowLevelStrategy(self, endx, endy)
+                    nextActions = lowLevelStrategy(self.maxWeight, endx, endy)
                 else:
-                    nextActions = lowLevelStrategyImpostor(self, endx, endy)
-                    print(self.me.name + " impostor")
+                    nextActions = lowLevelStrategyImpostor(self.maxWeight, endx, endy)
+                    print(gameStatus.game.me.name + " impostor")
 
                 for (action, direction) in nextActions:
                     if action == "move":
@@ -438,10 +438,10 @@ class Karen:
 
             # AGGIORNAMENTO
             gameStatus.game.serverMap = self.lookAtMap(False)
-            gameStatus.game.weightedMap = deterministicMap(self.me, self.maxWeight)
+            gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         if gameStatus.game.state != "FINISHED":
-            print(self.me.name + " è morto.")
+            print(gameStatus.game.me.name + " è morto.")
 
         while gameStatus.game.state == "ACTIVE":
             self.lookStatus()
