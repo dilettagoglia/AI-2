@@ -85,38 +85,38 @@ def fuzzyValues(me, mapSize):
         """
         wally = gameStatus.game.walls[w][1]
         wallx = gameStatus.game.walls[w][0]
-        if (gameStatus.game.weightedMap[wallx - 1][wally] != 0):
+        if (wallx != 0) & (gameStatus.game.weightedMap[wallx - 1][wally] != 0):
             x = wallx - 1
             wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x, wally))
             # print('Muro x'+str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
-                wall_flag_dist[1] = x  # todo controllare coordinate x e y
+                wall_flag_dist[1] = x
                 wall_flag_dist[2] = wally
         # print('posizione' + str(gameStatus.game.weightedMap[wallx][wally]))
-        if (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
+        if (wallx != mapSize) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
             x = wallx + 1
             wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x, wally))
             # print('Muro x'+str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
-                wall_flag_dist[1] = x  # todo controllare coordinate x e y
+                wall_flag_dist[1] = x
                 wall_flag_dist[2] = wally
-        if (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
+        if (wally != 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
             y = wally - 1
             wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, wallx, y))
             # print('Muro y' + str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
-                wall_flag_dist[1] = wallx  # todo controllare coordinate x e y
+                wall_flag_dist[1] = wallx
                 wall_flag_dist[2] = y
-        if (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
+        if (wally != mapSize) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
             y = wally + 1
             wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, wallx, y))
             # print('Muro y' + str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
-                wall_flag_dist[1] = wallx  # todo controllare coordinate x e y
+                wall_flag_dist[1] = wallx
                 wall_flag_dist[2] = y
 
     # ulteriore controllo: quanti altri muri ci sono intorno al muro più vicino alla bandiera
@@ -144,7 +144,7 @@ def fuzzyValues(me, mapSize):
             #print('Muro x'+str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
-                wall_me_dist[1] = x  # todo controllare coordinate x e y
+                wall_me_dist[1] = x
                 wall_me_dist[2] = wally
         if (wallx != mapSize) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0) :
             x = wallx + 1
@@ -152,7 +152,7 @@ def fuzzyValues(me, mapSize):
             #print('Muro x'+str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
-                wall_me_dist[1] = x  # todo controllare coordinate x e y
+                wall_me_dist[1] = x
                 wall_me_dist[2] = wally
         if (wally != 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
             y = wally - 1
@@ -160,7 +160,7 @@ def fuzzyValues(me, mapSize):
             #print('Muro y' + str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
-                wall_me_dist[1] = wallx  # todo controllare coordinate x e y
+                wall_me_dist[1] = wallx
                 wall_me_dist[2] = y
         if (wally != mapSize) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
             y = wally + 1
@@ -168,7 +168,7 @@ def fuzzyValues(me, mapSize):
             #print('Muro y' + str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
-                wall_me_dist[1] = wallx  # todo controllare coordinate x e y
+                wall_me_dist[1] = wallx
                 wall_me_dist[2] = y
         # print('Wall Distance: ' + str(wall_me_dist[0]) +' Coordinates: ' + str(wall_me_dist[1]) + ' '+ str(wall_me_dist[2]))
 
@@ -243,47 +243,47 @@ def fuzzyValues(me, mapSize):
 
     # d_SafeZone = 0 means that I'm in a safeZone
     # d_SafeZone = 1 or 2 means that i need to do 1 or 2 movement to be in a safeZone
-    if gameStatus.game.weightedMap[me.y][me.x] == 1:
+    if gameStatus.game.weightedMap[gameStatus.game.me.y][gameStatus.game.me.x] == 1:
         d_SafeZone[0] = 0
         d_SafeZone[1] = gameStatus.game.me.y
         d_SafeZone[2] = gameStatus.game.me.x
     else:
-        if gameStatus.game.weightedMap[me.y - 1][me.x] == 1:
+        if gameStatus.game.weightedMap[gameStatus.game.me.y - 1][gameStatus.game.me.x] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = gameStatus.game.me.y - 1
             d_SafeZone[2] = gameStatus.game.me.x
 
-        elif gameStatus.game.weightedMap[me.y][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y][gameStatus.game.me.x - 1] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = gameStatus.game.me.y
             d_SafeZone[2] = gameStatus.game.me.x - 1
 
-        elif gameStatus.game.weightedMap[me.y][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y][gameStatus.game.me.x + 1] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = gameStatus.game.me.y
             d_SafeZone[2] = gameStatus.game.me.x + 1
 
-        elif gameStatus.game.weightedMap[me.y + 1][me.x] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y + 1][gameStatus.game.me.x] == 1:
             d_SafeZone[0] = 1
             d_SafeZone[1] = gameStatus.game.me.y + 1
             d_SafeZone[2] = gameStatus.game.me.x
 
-        elif gameStatus.game.weightedMap[me.y - 1][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y - 1][gameStatus.game.me.x - 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = gameStatus.game.me.y - 1
             d_SafeZone[2] = gameStatus.game.me.x - 1
 
-        elif gameStatus.game.weightedMap[me.y - 1][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y - 1][gameStatus.game.me.x + 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = gameStatus.game.me.y - 1
             d_SafeZone[2] = gameStatus.game.me.x + 1
 
-        elif gameStatus.game.weightedMap[me.y + 1][me.x - 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y + 1][gameStatus.game.me.x - 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = gameStatus.game.me.y + 1
             d_SafeZone[2] = gameStatus.game.me.x - 1
 
-        elif gameStatus.game.weightedMap[me.y + 1][me.x + 1] == 1:
+        elif gameStatus.game.weightedMap[gameStatus.game.me.y + 1][gameStatus.game.me.x + 1] == 1:
             d_SafeZone[0] = 2
             d_SafeZone[1] = gameStatus.game.me.y + 1
             d_SafeZone[2] = gameStatus.game.me.x + 1
