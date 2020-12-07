@@ -309,6 +309,7 @@ class Karen:
             return False
         response = self.serverSocket.send(gameStatus.game.name + " MOVE " + direction)
         if response[0] == "OK moved":
+            print('Ok moved')
             return True
         return False
 
@@ -413,10 +414,10 @@ class Karen:
                 # elif gameStatus.game.stage == 1:
                 # endx, endy, nearestEnemyDistance = FuzzyControlSystemSecondStage(gameStatus.game.me, game, self.maxWeight)
                 # else:
-                endx, endy, nearestEnemyDistance = FuzzyControlSystem(gameStatus.game.me, self.maxWeight)
+                endx, endy, nearestEnemyDistance = FuzzyControlSystem(self.maxWeight)
             else:
 
-                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(gameStatus.game.me, self.maxWeight)
+                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(self.maxWeight)
                 print(gameStatus.game.me.name + " impostor")
             # Avoid useless LOOK if I can't die moving
             if int(nearestEnemyDistance // 2) > 2:
