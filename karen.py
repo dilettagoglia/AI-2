@@ -5,7 +5,7 @@ from connection.serverConnection import *
 from connection.chatConnection import ConnectToChat, ReceiveThread
 import re
 
-from social_deduction.chatAnalyzer import ChatAnalysisThread
+from social_deduction.chatAnalyzer import *
 from strategy.fuzzyStrategy import FuzzyControlSystem, FuzzyControlSystemImpostor
 from strategy.lowLevelStrategy import lowLevelStrategy, lowLevelStrategyImpostor
 from strategy.deterministicMap import deterministicMap
@@ -142,8 +142,12 @@ class Karen:
         """
         self.lookStatus()
 
+        pl = SD_Player(self.me.name, self.me.team)
+        gameStatus.db.playerList[self.me.name] = pl
         threadino = ChatAnalysisThread(self.me.name)
         threadino.start()
+        SD_thread = SocialDeductionThread()
+        SD_thread.start()
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 

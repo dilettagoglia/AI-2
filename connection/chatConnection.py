@@ -1,6 +1,7 @@
 import socket
 from threading import Thread, Lock, RLock
 import time
+from datetime import *
 
 from data_structure import gameStatus
 
@@ -23,12 +24,14 @@ class ReceiveThread(Thread):
     def run(self):
         while (True):
             received = self.conn.recv(4096)
-            ts = time.time()
+            #ts = time.time()
+            dateTimeObj = datetime.now()
+            timeObj = dateTimeObj.time()
             received = received.decode('utf-8')
             if received == '':
                 break
             print('Sono ' + self.plname + ', Ricevuto: ' + received)
-            pair = (received, ts)
+            pair = (received, timeObj)
             gameStatus.sharedList.append(pair)
 
 
