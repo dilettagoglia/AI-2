@@ -6,7 +6,7 @@ from connection.chatConnection import ConnectToChat, ReceiveThread
 import re
 
 from social_deduction.chatAnalyzer import *
-from strategy.fuzzyStrategy import FuzzyControlSystem, FuzzyControlSystemImpostor
+from strategy.fuzzyStrategy import *
 from strategy.lowLevelStrategy import lowLevelStrategy, lowLevelStrategyImpostor
 from strategy.deterministicMap import deterministicMap
 from strategy.movement import *

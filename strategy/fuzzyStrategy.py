@@ -46,7 +46,6 @@ def fuzzyValues(maxWeight):
     d_flag_barr = [maxWeight * 2, maxWeight, maxWeight]  # utile per avanzare dopo i 7 secondi
     nearestEnemyDistance = [maxWeight, maxWeight, maxWeight]
     myenergy = gameStatus.game.me.energy
-    stage = gameStatus.game.stage
 
     for k in gameStatus.game.enemies.keys():
         # for each enemy retrieve the min coordinate distance (x or y)
@@ -93,7 +92,7 @@ def fuzzyValues(maxWeight):
         wallx = gameStatus.game.walls[w][0]
 
         # controllo che il nemico è alla mia destra o alla mia sinistra. In stage 0 sicuramente il mio nemico è opposto rispetto alla mia fazione
-        #print("nearestEnemyD: " + str(nearestEnemyDistance[0]))
+        # print("nearestEnemyD: " + str(nearestEnemyDistance[0]))
         if gameStatus.game.me.x < int(nearestEnemyDistance[1]):
             # if gameStatus.game.me.x <= int(gameStatus.game.mapWidth/2):
             if (wallx > 0) and (gameStatus.game.weightedMap[wally][wallx - 1] != 0):
@@ -238,7 +237,7 @@ def fuzzyValues(maxWeight):
         else:
             d_SafeZone[0] = 3
 
-    return d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance, num_allies, allies, stage
+    return d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance, num_allies, allies
 
 
 def FuzzyControlSystemStage0(maxWeight):
@@ -327,7 +326,7 @@ def FuzzyControlSystemStage0(maxWeight):
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
     # d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies = fuzzyValues(
         maxWeight)
 
     sim.input['d_flag'] = flagDistance
@@ -357,7 +356,7 @@ def FuzzyControlSystemStage0(maxWeight):
         x = safeZoneDistance[1]
         y = safeZoneDistance[2]
 
-        #print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
+        # print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
 
 
     elif outputValue in range(20, 30):
@@ -365,14 +364,14 @@ def FuzzyControlSystemStage0(maxWeight):
         x = flagWallDist[1]
         y = flagWallDist[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
+        # print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
 
     else:
 
         x = meWallDist[1]
         y = meWallDist[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+        # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
     return x, y, nearestEnemyDistance[0]
 
@@ -387,6 +386,8 @@ def FuzzyControlSystemStage1(maxWeight):
     num_walls_me = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_me')
     wall_flag_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_flag_dist')
     wall_me_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_me_dist')
+    energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
+    d_recharge = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_recharge')
 
     # d_flag_barr = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_flag_barr')
     # d_barrier = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
@@ -396,6 +397,10 @@ def FuzzyControlSystemStage1(maxWeight):
     output['goToSafePlace'] = fuzz.trimf(output.universe, [0, 10, 10])
     output['hideBehindMyWall'] = fuzz.trimf(output.universe, [10, 20, 20])
     output['hideBehindFlagWall'] = fuzz.trimf(output.universe, [20, 30, 30])
+    output['goToKill'] = fuzz.trimf(output.universe, [30, 40, 40])
+    output['goToFlag'] = fuzz.trimf(output.universe, [40, 50, 50])
+    output['goToRecharge'] = fuzz.trimf(output.universe, [50, 60, 60])
+
     # output['useTheBarrier'] = fuzz.trimf(output.universe, [20, 30, 30])
 
     # Auto-membership function population is possible with .automf(3, 5, or 7)
@@ -407,33 +412,47 @@ def FuzzyControlSystemStage1(maxWeight):
     wall_flag_dist.automf(3)
     wall_me_dist.automf(3)
     num_walls_me.automf(3)
+    energy.automf(3)
+    d_recharge.automf(3)
+
     # d_flag_barr.automf(3)
     # d_barrier.automf(3)
 
     # poor mediocre average decent good
-
 
     behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (
             num_walls_flag['average'] | num_walls_flag['good']) |
                                (d_flag['poor'] | d_flag['average']) & (wall_me_dist['good']) & (
                                        num_walls_flag['average'] | num_walls_flag['good'])
                                , output['hideBehindFlagWall'])
-
-    behindMyWall = ctrl.Rule((d_flag['good'] & wall_me_dist['poor']) |
-                             (d_flag['good'] & wall_me_dist['poor'] & num_walls_me['good']) |
+    """
+    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) &wall_me_dist['poor']) |
+                             (d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good']) |
                              (d_flag['good'] & num_walls_flag['poor'])
                              , output['hideBehindMyWall'])
-
+    """
+    behindMyWall = ctrl.Rule((d_flag['poor'])
+                             , output['hideBehindMyWall'])
     staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) &  # ci sono molti nemici
-                         (d_safeZone['poor']) &  # non sono al sicuro
+                         (d_safeZone['good']) &  # non sono al sicuro
                          (num_walls_flag['poor'] | num_walls_me[
                              'poor']) &  # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
                          (wall_me_dist['good'] | wall_flag_dist['good'])  # sono troppo lontano da qualsiasi muro
                          , output['goToSafePlace'])
 
+    needEnergy = ctrl.Rule(((energy['poor'] | energy['average']) & d_recharge['poor']) |
+                           (energy['poor'] | d_recharge['poor']) |
+                           ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good'])
+                           , output['goToRecharge'])
+
+    goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]),
+                         output['goToKill'])
+    goToFlag = ctrl.Rule(
+        (d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] & num_enemies['poor'], output["goToFlag"])
+
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
 
-    system = ctrl.ControlSystem(rules=[behindFlagWall, behindMyWall, staysafe])
+    system = ctrl.ControlSystem(rules=[behindFlagWall, behindMyWall, staysafe, needEnergy, goToKill, goToFlag])
 
     # Later we intend to run this system with a 21*21 set of inputs, so we almediocre
     # that many plus one unique runs before results are flushed.
@@ -444,7 +463,7 @@ def FuzzyControlSystemStage1(maxWeight):
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
     # d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies = fuzzyValues(
         maxWeight)
 
     sim.input['d_flag'] = flagDistance
@@ -454,6 +473,9 @@ def FuzzyControlSystemStage1(maxWeight):
     sim.input['wall_me_dist'] = meWallDist[0]
     sim.input['num_enemies'] = numberOfEnemies
     sim.input['d_safeZone'] = safeZoneDistance[0]
+    sim.input['d_recharge'] = nearestRecharge[0]
+    sim.input['energy'] = int(myEnergy)
+
     # sim.input['d_barrier'] = 32
 
     # Crunch the numbers
@@ -474,22 +496,44 @@ def FuzzyControlSystemStage1(maxWeight):
         x = safeZoneDistance[1]
         y = safeZoneDistance[2]
 
-        #print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
+        print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
+
+    elif outputValue in range(10, 20):
+
+        x = meWallDist[1]
+        y = meWallDist[2]
+
+        print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
 
     elif outputValue in range(20, 30):
 
         x = flagWallDist[1]
+
         y = flagWallDist[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
+        print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
+
+    elif outputValue in range(30, 40):
+
+        x = nearestEnemyDistance[1]
+        y = nearestEnemyDistance[2]
+
+        print(gameStatus.game.me.name + " vai ad ammazzare: " + str(x) + " " + str(y))
+
+    elif outputValue in range(40, 50):
+
+        x = gameStatus.game.wantedFlagX
+        y = gameStatus.game.wantedFlagY
+
+        print(gameStatus.game.me.name + " vai alla bandiera: " + str(x) + " " + str(y))
 
     else:
 
-        x = meWallDist[1]
-        y = meWallDist[2]
+        x = d_recharge[1]
+        y = d_recharge[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+        # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
     return x, y, nearestEnemyDistance[0]
 
@@ -504,6 +548,8 @@ def FuzzyControlSystemStage2(maxWeight):
     num_walls_me = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_me')
     wall_flag_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_flag_dist')
     wall_me_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_me_dist')
+    energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
+    d_recharge = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_recharge')
 
     # d_flag_barr = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_flag_barr')
     # d_barrier = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
@@ -513,6 +559,10 @@ def FuzzyControlSystemStage2(maxWeight):
     output['goToSafePlace'] = fuzz.trimf(output.universe, [0, 10, 10])
     output['hideBehindMyWall'] = fuzz.trimf(output.universe, [10, 20, 20])
     output['hideBehindFlagWall'] = fuzz.trimf(output.universe, [20, 30, 30])
+    output['goToKill'] = fuzz.trimf(output.universe, [30, 40, 40])
+    output['goToFlag'] = fuzz.trimf(output.universe, [40, 50, 50])
+    output['goToRecharge'] = fuzz.trimf(output.universe, [50, 60, 60])
+
     # output['useTheBarrier'] = fuzz.trimf(output.universe, [20, 30, 30])
 
     # Auto-membership function population is possible with .automf(3, 5, or 7)
@@ -526,28 +576,9 @@ def FuzzyControlSystemStage2(maxWeight):
     num_walls_me.automf(3)
     # d_flag_barr.automf(3)
     # d_barrier.automf(3)
-
+    energy.automf(3)
+    d_recharge.automf(3)
     # poor mediocre average decent good
-
-    """
-
-    1. mi nascondo dietro al muro più vicino alla bandiera se:
-    - non sono troppo lontano (max 14 passi per stare safe)
-    - c'è più di un muro vicino alla bandiera (almeno 2)
-
-    2. mi nascondo dietro il muro più vicino a me se:
-    - la bandiera è troppo lontana
-    - c'è più di un muro vicino a me (almeno 2)
-
-    3. mi sposto in zona sicura solo se:
-    - le prime due opzioni sono escluse
-    - sono in pericolo, ovvero ho nemici vicini
-
-    MIGLIORAMENTI:
-    - controllare muri al bordo della mappa
-    - trovare agglomerati di muri nella mappa
-
-    """
 
     behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (
             num_walls_flag['average'] | num_walls_flag['good']) |
@@ -555,21 +586,36 @@ def FuzzyControlSystemStage2(maxWeight):
                                        num_walls_flag['average'] | num_walls_flag['good'])
                                , output['hideBehindFlagWall'])
 
-    behindMyWall = ctrl.Rule((d_flag['good'] & wall_me_dist['poor']) |
-                             (d_flag['good'] & wall_me_dist['poor'] & num_walls_me['good']) |
+    """
+    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) &wall_me_dist['poor']) |
+                             (d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good']) |
                              (d_flag['good'] & num_walls_flag['poor'])
+                             , output['hideBehindMyWall'])
+    """
+    behindMyWall = ctrl.Rule((d_flag['poor'])
                              , output['hideBehindMyWall'])
 
     staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) &  # ci sono molti nemici
-                         (d_safeZone['poor']) &  # non sono al sicuro
+                         (d_safeZone['good']) &  # non sono al sicuro
                          (num_walls_flag['poor'] | num_walls_me[
                              'poor']) &  # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
                          (wall_me_dist['good'] | wall_flag_dist['good'])  # sono troppo lontano da qualsiasi muro
                          , output['goToSafePlace'])
 
+    needEnergy = ctrl.Rule(((energy['poor'] | energy['average']) & d_recharge['poor']) |
+                           (energy['poor'] | d_recharge['poor']) |
+                           ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good'])
+                           , output['goToRecharge'])
+
+    goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]),
+                         output['goToKill'])
+    goToFlag = ctrl.Rule(
+        (d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] &
+        num_enemies['poor'], output["goToFlag"])
+
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
 
-    system = ctrl.ControlSystem(rules=[behindFlagWall, behindMyWall, staysafe])
+    system = ctrl.ControlSystem(rules=[behindFlagWall, behindMyWall, staysafe, needEnergy, goToKill, goToFlag])
 
     # Later we intend to run this system with a 21*21 set of inputs, so we almediocre
     # that many plus one unique runs before results are flushed.
@@ -580,7 +626,7 @@ def FuzzyControlSystemStage2(maxWeight):
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
     # d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies = fuzzyValues(
         maxWeight)
 
     sim.input['d_flag'] = flagDistance
@@ -590,6 +636,9 @@ def FuzzyControlSystemStage2(maxWeight):
     sim.input['wall_me_dist'] = meWallDist[0]
     sim.input['num_enemies'] = numberOfEnemies
     sim.input['d_safeZone'] = safeZoneDistance[0]
+    sim.input['d_recharge'] = nearestRecharge[0]
+    sim.input['energy'] = int(myEnergy)
+
     # sim.input['d_barrier'] = 32
 
     # Crunch the numbers
@@ -603,34 +652,58 @@ def FuzzyControlSystemStage2(maxWeight):
         # crisp case: mi nascondo dietro al muro più vicino a me
         print("EXCEPTION FUZZY")
 
-        outputValue = 15
+        outputValue = 45
 
     if outputValue in range(0, 10):
 
         x = safeZoneDistance[1]
         y = safeZoneDistance[2]
 
-        #print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
+        print(gameStatus.game.me.name + " vado in safeZone: " + str(x) + " " + str(y))
+
+    elif outputValue in range(10, 20):
+
+        x = meWallDist[1]
+        y = meWallDist[2]
+
+        print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
 
     elif outputValue in range(20, 30):
 
         x = flagWallDist[1]
+
         y = flagWallDist[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
+        print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
+
+    elif outputValue in range(30, 40):
+
+        x = nearestEnemyDistance[1]
+        y = nearestEnemyDistance[2]
+
+        print(gameStatus.game.me.name + " vai ad ammazzare: " + str(x) + " " + str(y))
+
+    elif outputValue in range(40, 50):
+
+        x = gameStatus.game.wantedFlagX
+        y = gameStatus.game.wantedFlagY
+
+        print(gameStatus.game.me.name + " vai alla bandiera: " + str(x) + " " + str(y))
 
     else:
 
-        x = meWallDist[1]
-        y = meWallDist[2]
+        x = nearestRecharge[1]
+        y = nearestRecharge[2]
 
-        #print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+        # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
     return x, y, nearestEnemyDistance[0]
 
 
+
 # nuovo per l'impostor DA AGGIORNARE
+
 def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     """
     - Finchè sono in vita piu di un terzo degli alleati --> stai in difesa o comunque nasconditi o muoviti evitando i nemici.
@@ -639,7 +712,6 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     - num_allies
     - allies (coordinates)
     - safeZone
-    - stage
 
     Output
     - staySafe
@@ -652,11 +724,9 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
     num_enemies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.enemies), 1), 'num_enemies')
     d_recharge = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_recharge')
-    d_flag = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_flag')
     num_allies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.allies), 1), 'num_allies')  # how many
     allies_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'allies')  # coordinates
-    d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
-    stage = ctrl.Antecedent(np.arange(0, 2, 1), 'stage')
+    # d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
 
     output = ctrl.Consequent(np.arange(0, 30, 1), 'output')
 
@@ -668,10 +738,8 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
 
     energy.automf(3)
     d_recharge.automf(3)
-    d_flag.automf(3)
-    d_safeZone.automf(3)
+    # d_safeZone.automf(3)
     num_allies.automf(3)
-    stage.automf(3)
     allies_dist.automf(3)
     num_enemies.automf(3)
 
@@ -689,19 +757,17 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     # poor mediocre average decent good
 
     # todo modellare le rules
-    needEnergy = ctrl.Rule((stage['poor'] | stage['average']) &
-                           (((energy['poor'] | energy['average']) & d_recharge['poor']) |
-                            (energy['poor'] | d_recharge['poor']) |
-                            ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good']))
+    needEnergy = ctrl.Rule(((energy['poor'] | energy['average']) & d_recharge['poor']) |
+                           (energy['poor'] | d_recharge['poor']) |
+                           ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good'])
                            , output['goToRecharge'])
 
-    staySafe = ctrl.Rule((allies_dist['average'] | allies_dist['good']) &
-                         (stage['poor'] | stage['average']) &
-                         ((num_allies['average'] | num_allies['good']) |
-                          (num_enemies['average'] | num_enemies['good']))
+    staySafe = ctrl.Rule((num_allies['average'] | num_allies['good']) |
+                         (num_enemies['average'] | num_enemies['good'])
                          , output['goToSafePlace'])
 
-    kill = ctrl.Rule((allies_dist['poor'] & (num_allies['poor']) | (stage['good'])), output['goToKill'])
+    kill = ctrl.Rule(((allies_dist['poor'] | allies_dist['average'] | allies_dist['good']) & (num_allies['poor'])),
+                     output['goToKill'])
 
     system = ctrl.ControlSystem(rules=[needEnergy, staySafe, kill])
 
@@ -713,16 +779,13 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     # Pass inputs to the ControlSystem using Antecedent labels with Pythonic API
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies = fuzzyValues(
         maxWeight)
 
     sim.input['energy'] = int(myEnergy)
-    sim.input['d_flag'] = flagDistance  # TODO check unexpected input
     sim.input['d_recharge'] = nearestRecharge[0]
     sim.input['num_allies'] = numberOfAllies
-    sim.input['allies_dist'] = allies[0]
-    sim.input['stage'] = stage
-    sim.input['d_safeZone'] = safeZoneDistance[0]
+    sim.input['allies'] = allies[0]
     sim.input['num_enemies'] = numberOfEnemies
     # sim.input['d_barrier'] = 32
 
@@ -742,20 +805,20 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
 
         x = nearestRecharge[1]
         y = nearestRecharge[2]
-        print(gameStatus.game.me.name + " vado in rech" + str(x) + " " + str(y))
+        print("IMPOSTOR : " + gameStatus.game.me.name + " vado in rech" + str(x) + " " + str(y))
 
     elif outputValue in range(10, 20):
         # safe
 
         x = safeZoneDistance[1]
         y = safeZoneDistance[2]
-        print(gameStatus.game.me.name + " vado in safeZone" + str(x) + " " + str(y))
+        print("IMPOSTOR : " + gameStatus.game.me.name + " vado in safeZone" + str(x) + " " + str(y))
 
     else:
         # kill
         x = allies[1]
         y = allies[2]
-        print(gameStatus.game.me.name + " vado ad uccidere " + str(x) + " " + str(y))
+        print("IMPOSTOR : " + gameStatus.game.me.name + " vado ad uccidere " + str(x) + " " + str(y))
     # Check if i will be in safeZone after this movement
 
     return x, y, nearestEnemyDistance[0]
