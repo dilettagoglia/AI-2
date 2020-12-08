@@ -36,6 +36,7 @@ class Game:
         self.wantedFlagName = None
         self.serverMap = None
         self.weightedMap = None
+        self.walls = []
 
 
 global game

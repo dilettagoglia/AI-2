@@ -14,7 +14,9 @@ from pathfinding.finder.ida_star import IDAStarFinder
 
 # You can use negative values to describe different types of obstacles.
 # It does not make a difference for the path finding algorithm but it might be useful for your later map evaluation.
-def findPath(weightedMap, startx, starty, endx, endy):
+
+
+def findPath4Fuzzy(weightedMap, startx, starty, endx, endy):
     """
     Apply an algorithm for path finding
     :param weightedMap: the weighted and parsed map
@@ -23,7 +25,6 @@ def findPath(weightedMap, startx, starty, endx, endy):
     :param endy: the goal y cooridnate.
     :return: next position coordinates
     """
-
 
     grid = Grid(matrix=weightedMap)
 

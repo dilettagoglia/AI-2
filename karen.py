@@ -55,6 +55,7 @@ class Karen:
         t_r = ReceiveThread('Receive', self.chatSocket.net, gameStatus.game.me.name)
         t_r.start()
 
+
     def createGame(self, gameName, flags):
         """
         Create a new Game
@@ -140,7 +141,7 @@ class Karen:
         """
         self.lookStatus()
 
-        time.sleep(5)
+
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
@@ -254,6 +255,14 @@ class Karen:
                     # Used only the first time that Karen looks at the map. Find FLAGS position
                     elif firstTime is True:
 
+                        wallx = 0
+                        wally = 0
+                        if splitted[j] == "#":
+                            wallx = j
+                            wally = i
+                            gameStatus.game.walls.append([wallx, wally])
+                            # print('Muri :' + str(gameStatus.game.walls))
+
                         if splitted[j] == "x" and gameStatus.game.me.symbol.isupper():
                             gameStatus.game.wantedFlagName = "x"
                             gameStatus.game.wantedFlagX = j
@@ -276,6 +285,7 @@ class Karen:
                 if firstTime is True:
                     gameStatus.game.mapWidth = len(actualMap[0])
                     gameStatus.game.mapHeight = len(actualMap)
+
 
             return actualMap
 
@@ -374,6 +384,8 @@ class Karen:
             print("Hai sbagliato nome della strategy. Riprova controllando i param di Karen.")
             return False
 
+
+
     def llStrategy(self):
         """
         Call the lowLevelStrategy. Run to the flag with only basic forecasting decisions *PROTO1*
@@ -447,9 +459,9 @@ class Karen:
                 # elif gameStatus.game.stage == 1:
                 # endx, endy, nearestEnemyDistance = FuzzyControlSystemSecondStage(gameStatus.game.me, game, self.maxWeight)
                 # else:
-                endx, endy, nearestEnemyDistance = FuzzyControlSystem(gameStatus.game.me, self.maxWeight)
+                endx, endy, nearestEnemyDistance = FuzzyControlSystem(self.maxWeight)
             else:
-                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(gameStatus.game.me, self.maxWeight)
+                endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(self.maxWeight)
                 print(gameStatus.game.me.name + " impostor")
             # Avoid useless LOOK if I can't die moving
             if int(nearestEnemyDistance // 2) > 2:
