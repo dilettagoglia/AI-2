@@ -64,7 +64,6 @@ class ChatAnalysisThread(Thread):
                         if tmp[3] == 'hit':
                             # 654324 @GameServer pinko2 hit pinko
                             # aggiungo pinko a lista killed di pinko2
-
                             ################ controllo che non sia io
                             if gameStatus.db.playerList.get(tmp[2]) is None:
                                 trovato = 0

@@ -6,8 +6,6 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
-
-
 # karen.fuzzyStrategy chiama inputFuzzy
 # creare una funzione fuzzyValues che generi i valori di input per FuzzyControlSystem (calcolando i vari pathfinder verso tutte le possibili destinazioni).
 # Dopo aver chiamato la funzione FuzzyControlSystem, aspetta il return sim.output e in base a questo valore sceglie verso dove muoversi.
@@ -32,48 +30,50 @@ from skfuzzy import control as ctrl
 
     """
 
-def fuzzyValues(mapSize):
+
+def fuzzyValues(maxWeight):
     num_enemies = 0
     num_allies = len(gameStatus.game.allies)
     # print('Number of allies' + str(num_allies)) # ok
     num_walls_flag = 0
     num_walls_me = 0
-    d_SafeZone = [mapSize, mapSize, mapSize]
+    d_SafeZone = [maxWeight, maxWeight, maxWeight]
     enemyDistances = dict()
-    allies = [mapSize, mapSize, mapSize]
-    wall_flag_dist = [mapSize, mapSize, mapSize]
-    wall_me_dist = [mapSize, mapSize, mapSize]
-    nearestRecharge = [mapSize * 2, mapSize, mapSize] # nearestRecharge [distance, xCoordinate, yCoordinate]
-    d_flag_barr = [mapSize * 2, mapSize, mapSize] # utile per avanzare dopo i 7 secondi
-    nearestEnemyDistance = mapSize
+    allies = [maxWeight, maxWeight, maxWeight]
+    wall_flag_dist = [maxWeight, maxWeight, maxWeight]
+    wall_me_dist = [maxWeight, maxWeight, maxWeight]
+    nearestRecharge = [maxWeight * 2, maxWeight, maxWeight]  # nearestRecharge [distance, xCoordinate, yCoordinate]
+    d_flag_barr = [maxWeight * 2, maxWeight, maxWeight]  # utile per avanzare dopo i 7 secondi
+    nearestEnemyDistance = maxWeight
     myenergy = gameStatus.game.me.energy
     stage = gameStatus.game.stage
-
 
     for k in gameStatus.game.enemies.keys():
         # for each enemy retrieve the min coordinate distance (x or y)
         if gameStatus.game.enemies[k].state == "ACTIVE":
             enemyDistances[gameStatus.game.enemies[k].symbol] = min(
-                len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.me.x, gameStatus.game.enemies[k].y)),
-                len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.enemies[k].x, gameStatus.game.me.y)))
+                len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.me.x,
+                             gameStatus.game.enemies[k].y)),
+                len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.enemies[k].x,
+                             gameStatus.game.me.y)))
 
             # distance from the nearest enemy firing line
             if nearestEnemyDistance > enemyDistances[gameStatus.game.enemies[k].symbol]:
                 nearestEnemyDistance = enemyDistances[gameStatus.game.enemies[k].symbol]
 
-
     for k in enemyDistances.keys():
-        if enemyDistances[k] < int(mapSize / 6):
+        if enemyDistances[k] < int(maxWeight / 6):
             num_enemies += 1
-
 
     for k in gameStatus.game.allies.keys():
         if gameStatus.game.allies[k].state == "ACTIVE":
-            all = min(len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.me.x, gameStatus.game.allies[k].y)),
-                      len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.allies[k].x, gameStatus.game.me.y)))
+            all = min(len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.me.x,
+                                   gameStatus.game.allies[k].y)),
+                      len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.allies[k].x,
+                                   gameStatus.game.me.y)))
             if all < allies[0]:
                 allies[0] = all
-                allies[1] = gameStatus.game.allies[k].x # todo controllare correttezza coordinate x e y
+                allies[1] = gameStatus.game.allies[k].x  # todo controllare correttezza coordinate x e y
                 allies[2] = gameStatus.game.allies[k].y
 
     # print('Allies' + str(allies)) # ok
@@ -101,18 +101,25 @@ def fuzzyValues(mapSize):
         """
         wally = gameStatus.game.walls[w][1]
         wallx = gameStatus.game.walls[w][0]
-        if (wallx > 0) & (gameStatus.game.weightedMap[wallx - 1][wally] != 0):
+
+    
+        if (wallx > 0) & (gameStatus.game.weightedMap[wally][wallx -1] != 0):
+
             x = wallx - 1
-            wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x, wally))
+            wall = len(
+                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x,
+                               wally))
             # print('Muro x'+str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
                 wall_flag_dist[1] = x
                 wall_flag_dist[2] = wally
         # print('posizione' + str(gameStatus.game.weightedMap[wallx][wally]))
-        if (wallx < mapSize-1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
+        if (wallx < maxWeight - 1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
             x = wallx + 1
-            wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x, wally))
+            wall = len(
+                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x,
+                               wally))
             # print('Muro x'+str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
@@ -120,15 +127,19 @@ def fuzzyValues(mapSize):
                 wall_flag_dist[2] = wally
         if (wally > 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
             y = wally - 1
-            wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, wallx, y))
+            wall = len(
+                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY,
+                               wallx, y))
             # print('Muro y' + str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
                 wall_flag_dist[1] = wallx
                 wall_flag_dist[2] = y
-        if (wally < mapSize-1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
+        if (wally < maxWeight - 1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
             y = wally + 1
-            wall = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, wallx, y))
+            wall = len(
+                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY,
+                               wallx, y))
             # print('Muro y' + str(wall))
             if (wall < wall_flag_dist[0]):
                 wall_flag_dist[0] = wall
@@ -139,7 +150,8 @@ def fuzzyValues(mapSize):
     # todo: non va bene rifare
     for w in range(len(gameStatus.game.walls)):
         # controllo le x e le y del muro
-        if (wall_flag_dist[1] == gameStatus.game.walls[w][0]) | (wall_flag_dist[2] == gameStatus.game.walls[w][1]) : # controllo se muri hanno la stessa ascissa o ordinata
+        if (wall_flag_dist[1] == gameStatus.game.walls[w][0]) | (wall_flag_dist[2] == gameStatus.game.walls[w][
+            1]):  # controllo se muri hanno la stessa ascissa o ordinata
             num_walls_flag += 1
     # print ('Quanti muri:' + str(num_walls_flag))
 
@@ -154,18 +166,32 @@ def fuzzyValues(mapSize):
         # min distance is equal to min steps to reach it
         wally = gameStatus.game.walls[w][1]
         wallx = gameStatus.game.walls[w][0]
-        if (wallx > 0) & (gameStatus.game.weightedMap[wallx - 1][wally] != 0):
-            x = wallx - 1
-            wall = len(findPath(gameStatus.game.weightedMap,gameStatus.game.me, x, wally))
-            #print('Muro x'+str(wall))
-            if (wall < wall_me_dist[0]):
-                wall_me_dist[0] = wall
-                wall_me_dist[1] = x
-                wall_me_dist[2] = wally
-        if (wallx < mapSize-1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0) :
+
+        if gameStatus.game.me.x <= int(gameStatus.game.mapWidth/2):
+            if (wallx > 0) & (gameStatus.game.weightedMap[wally][wallx -1] != 0):
+                x = wallx - 1
+                wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
+
+                # print('Muro x'+str(wall))
+                if wall < wall_me_dist[0]:
+                    wall_me_dist[0] = wall
+                    wall_me_dist[1] = x
+                    wall_me_dist[2] = wally
+        else:
+            if (wallx < gameStatus.game.mapWidth-1) & (gameStatus.game.weightedMap[wally][wallx + 1] != 0):
+                x = wallx + 1
+                wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
+
+                # print('Muro x'+str(wall))
+                if wall < wall_me_dist[0]:
+                    wall_me_dist[0] = wall
+                    wall_me_dist[1] = x
+                    wall_me_dist[2] = wally
+        """
+        if (wallx < maxWeight - 1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
             x = wallx + 1
             wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
-            #print('Muro x'+str(wall))
+            # print('Muro x'+str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
                 wall_me_dist[1] = x
@@ -173,27 +199,28 @@ def fuzzyValues(mapSize):
         if (wally > 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
             y = wally - 1
             wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, wallx, y))
-            #print('Muro y' + str(wall))
+            # print('Muro y' + str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
                 wall_me_dist[1] = wallx
                 wall_me_dist[2] = y
-        if (wally < mapSize-1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
+        if (wally < maxWeight - 1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
             y = wally + 1
             wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, wallx, y))
-            #print('Muro y' + str(wall))
+            # print('Muro y' + str(wall))
             if (wall < wall_me_dist[0]):
                 wall_me_dist[0] = wall
                 wall_me_dist[1] = wallx
                 wall_me_dist[2] = y
         # print('Wall Distance: ' + str(wall_me_dist[0]) +' Coordinates: ' + str(wall_me_dist[1]) + ' '+ str(wall_me_dist[2]))
-
-
+        """
     # ulteriore controllo: quanti altri muri ci sono intorno al muro più vicino alla bandiera
+
     # todo: non va bene rifare
     for w in range(len(gameStatus.game.walls)):
         # controllo le x e le y del muro
-        if (wall_me_dist[1] == gameStatus.game.walls[w][0]) | (wall_me_dist[2] == gameStatus.game.walls[w][1]) : # controllo se muri hanno la stessa ascissa o ordinata
+        if (wall_me_dist[1] == gameStatus.game.walls[w][0]) | (
+                wall_me_dist[2] == gameStatus.game.walls[w][1]):  # controllo se muri hanno la stessa ascissa o ordinata
             num_walls_me += 1
 
     # print ('Quanti muri:' + str(num_walls_me))
@@ -237,7 +264,8 @@ def fuzzyValues(mapSize):
 
             # barriera più vicina alla bandiera
             if gameStatus.game.serverMap[i][j] == "&":
-                barr = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, i, j))
+                barr = len(findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX,
+                                          gameStatus.game.wantedFlagY, i, j))
                 if barr < d_flag_barr[0]:
                     d_flag_barr[0] = barr
                     d_flag_barr[1] = j
@@ -253,9 +281,9 @@ def fuzzyValues(mapSize):
 
             # non inserisco qui i controlli sui muri perchè sono immmobili quindi ho recuperato le loro coordinate alla prima look
 
-
     # distanza tra me e la bandiera
-    d_flag = len(findPath(gameStatus.game.weightedMap,gameStatus.game.me, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY))
+    d_flag = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, gameStatus.game.wantedFlagX,
+                          gameStatus.game.wantedFlagY))
 
     # d_SafeZone = 0 means that I'm in a safeZone
     # d_SafeZone = 1 or 2 means that i need to do 1 or 2 movement to be in a safeZone
@@ -311,9 +339,7 @@ def fuzzyValues(mapSize):
 
 
 # PER I PRIMI 7 SECONDI
-def FuzzyControlSystem(mapSize):
-
-
+def FuzzyControlSystem(maxWeight):
     # New Antecedent/Consequent objects hold universe variables and membership functions
 
     d_flag = ctrl.Antecedent(np.arange(0, 16, 1), 'd_flag')
@@ -321,11 +347,11 @@ def FuzzyControlSystem(mapSize):
     d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
     num_walls_flag = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_flag')
     num_walls_me = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_me')
-    wall_flag_dist = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'wall_flag_dist')
-    wall_me_dist = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'wall_me_dist')
+    wall_flag_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_flag_dist')
+    wall_me_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_me_dist')
 
-    # d_flag_barr = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'd_flag_barr')
-    # d_barrier = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
+    # d_flag_barr = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_flag_barr')
+    # d_barrier = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
 
     output = ctrl.Consequent(np.arange(0, 30, 1), 'output')
 
@@ -345,7 +371,6 @@ def FuzzyControlSystem(mapSize):
     num_walls_me.automf(3)
     # d_flag_barr.automf(3)
     # d_barrier.automf(3)
-
 
     # poor mediocre average decent good
 
@@ -369,26 +394,25 @@ def FuzzyControlSystem(mapSize):
     
     """
 
+    behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (
+                num_walls_flag['average'] | num_walls_flag['good']) |
+                               (d_flag['poor'] | d_flag['average']) & (wall_me_dist['good']) & (
+                                           num_walls_flag['average'] | num_walls_flag['good'])
+                               , output['hideBehindFlagWall'])
 
-
-    behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (num_walls_flag['average'] | num_walls_flag['good']) |
-                          (d_flag['poor'] | d_flag['average']) & (wall_me_dist['good']) & (num_walls_flag['average'] | num_walls_flag['good'])
-                          , output['hideBehindFlagWall'])
-
-    behindMyWall = ctrl.Rule((d_flag['good'] & wall_me_dist['poor'])  |
-                            (d_flag['good'] & wall_me_dist['poor'] & num_walls_me['good']) |
-                            (d_flag['good'] & num_walls_flag['poor'])
+    behindMyWall = ctrl.Rule((d_flag['good'] & wall_me_dist['poor']) |
+                             (d_flag['good'] & wall_me_dist['poor'] & num_walls_me['good']) |
+                             (d_flag['good'] & num_walls_flag['poor'])
                              , output['hideBehindMyWall'])
 
-    staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) & # ci sono molti nemici
-                         (d_safeZone['poor']) & # non sono al sicuro
-                         (num_walls_flag['poor'] | num_walls_me['poor']) & # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
-                         (wall_me_dist['good'] | wall_flag_dist['good']) # sono troppo lontano da qualsiasi muro
+    staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) &  # ci sono molti nemici
+                         (d_safeZone['poor']) &  # non sono al sicuro
+                         (num_walls_flag['poor'] | num_walls_me[
+                             'poor']) &  # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
+                         (wall_me_dist['good'] | wall_flag_dist['good'])  # sono troppo lontano da qualsiasi muro
                          , output['goToSafePlace'])
 
-
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
-
 
     system = ctrl.ControlSystem(rules=[behindFlagWall, behindMyWall, staysafe])
 
@@ -401,9 +425,8 @@ def FuzzyControlSystem(mapSize):
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
     # d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, myenergy, d_SafeZone, nearestEnemyDistance
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(mapSize)
-
-
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+        maxWeight)
 
     sim.input['d_flag'] = flagDistance
     sim.input['num_walls_flag'] = numOfFlagWalls
@@ -425,10 +448,7 @@ def FuzzyControlSystem(mapSize):
         # crisp case: mi nascondo dietro al muro più vicino a me
         print("EXCEPTION FUZZY")
 
-
         outputValue = 15
-
-
 
     if outputValue in range(0, 10):
 
@@ -452,12 +472,12 @@ def FuzzyControlSystem(mapSize):
 
         print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
-
     return x, y, nearestEnemyDistance
+
 
 """
 # PER LA HUNTING SEASON (30 SECONDI)
-def FuzzyControlSystem(me, mapSize):
+def FuzzyControlSystem(me, maxWeight):
 
 
     # New Antecedent/Consequent objects hold universe variables and membership functions
@@ -467,11 +487,11 @@ def FuzzyControlSystem(me, mapSize):
     d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
     num_walls_flag = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_flag')
     num_walls_me = ctrl.Antecedent(np.arange(0, len(gameStatus.game.walls), 1), 'num_walls_me')
-    wall_flag_dist = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'wall_flag_dist')
-    wall_me_dist = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'wall_me_dist')
+    wall_flag_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_flag_dist')
+    wall_me_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'wall_me_dist')
 
-    # d_flag_barr = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'd_flag_barr')
-    # d_barrier = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
+    # d_flag_barr = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_flag_barr')
+    # d_barrier = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'd_barrier') # usare barriera nel secondFuzzyCS per avanzare
 
     output = ctrl.Consequent(np.arange(0, 30, 1), 'output')
 
@@ -544,7 +564,7 @@ def FuzzyControlSystem(me, mapSize):
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
     # d_flag, wall_flag_dist, wall_me_dist, num_walls_flag, num_walls_me, d_flag_barr, num_enemies, enemyDistances, nearestRecharge, me.energy, d_SafeZone, nearestEnemyDistance
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance = fuzzyValues(me, mapSize)
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance = fuzzyValues(me, maxWeight)
 
     # print("Flag Distance " + str(flagDistance))
     # print("numberOfEnemies " + str(numberOfEnemies))
@@ -617,7 +637,7 @@ def FuzzyControlSystem(me, mapSize):
 
 
 # nuovo per l'impostor DA AGGIORNARE
-def FuzzyControlSystemImpostor(mapSize): # nuovo
+def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     """
     - Finchè sono in vita piu di un terzo degli alleati --> stai in difesa o comunque nasconditi o muoviti evitando i nemici.
     - Quando ci sono meno di un terzo degli alleati o stanno rubando la flag --> endx endy saranno le coordinate degli alleati --> kill them
@@ -637,10 +657,10 @@ def FuzzyControlSystemImpostor(mapSize): # nuovo
 
     energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
     num_enemies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.enemies), 1), 'num_enemies')
-    d_recharge = ctrl.Antecedent(np.arange(0, int(mapSize * 3), 1), 'd_recharge')
-    d_flag = ctrl.Antecedent(np.arange(0, int(mapSize * 3), 1), 'd_flag')
-    num_allies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.allies), 1), 'num_allies') # how many
-    allies_dist = ctrl.Antecedent(np.arange(0, int(mapSize), 1), 'allies') # coordinates
+    d_recharge = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_recharge')
+    d_flag = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_flag')
+    num_allies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.allies), 1), 'num_allies')  # how many
+    allies_dist = ctrl.Antecedent(np.arange(0, int(maxWeight), 1), 'allies')  # coordinates
     d_safeZone = ctrl.Antecedent(np.arange(0, 3, 1), 'd_safeZone')
     stage = ctrl.Antecedent(np.arange(0, 2, 1), 'stage')
 
@@ -676,19 +696,18 @@ def FuzzyControlSystemImpostor(mapSize): # nuovo
 
     # todo modellare le rules
     needEnergy = ctrl.Rule((stage['poor'] | stage['average']) &
-                               (((energy['poor'] | energy['average']) & d_recharge['poor']) |
-                               (energy['poor'] | d_recharge['poor']) |
-                               ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good']))
-                               , output['goToRecharge'])
+                           (((energy['poor'] | energy['average']) & d_recharge['poor']) |
+                            (energy['poor'] | d_recharge['poor']) |
+                            ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good']))
+                           , output['goToRecharge'])
 
     staySafe = ctrl.Rule((allies_dist['average'] | allies_dist['good']) &
                          (stage['poor'] | stage['average']) &
-                            ((num_allies['average'] | num_allies['good']) |
-                            (num_enemies['average'] | num_enemies['good']))
-                            , output['goToSafePlace'])
+                         ((num_allies['average'] | num_allies['good']) |
+                          (num_enemies['average'] | num_enemies['good']))
+                         , output['goToSafePlace'])
 
     kill = ctrl.Rule((allies_dist['poor'] & (num_allies['poor']) | (stage['good'])), output['goToKill'])
-
 
     system = ctrl.ControlSystem(rules=[needEnergy, staySafe, kill])
 
@@ -700,10 +719,8 @@ def FuzzyControlSystemImpostor(mapSize): # nuovo
     # Pass inputs to the ControlSystem using Antecedent labels with Pythonic API
     # Note: if you like passing many inputs all at once, use .inputs(dict_of_data)
 
-
-    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(mapSize)
-
-
+    flagDistance, flagWallDist, meWallDist, numOfFlagWalls, numOfMeWalls, flagBarrDist, numberOfEnemies, enemyDistances, nearestRecharge, myEnergy, safeZoneDistance, nearestEnemyDistance, numberOfAllies, allies, stage = fuzzyValues(
+        maxWeight)
 
     sim.input['energy'] = int(myEnergy)
     sim.input['d_flag'] = flagDistance

@@ -57,6 +57,8 @@ class Karen:
 
 
     def createGame(self, gameName, flags):
+        time.sleep(0.5)
+
         """
         Create a new Game
         :param flags: T training, Q squared, W wide, 123 map dimension
@@ -102,6 +104,7 @@ class Karen:
             return False
 
     def joinGame(self, gameName, nature, role, userInfo=None):
+        time.sleep(0.6)
         """
         Let the AI join a game
         :param gameName: specify which game the AI want to join.
@@ -139,9 +142,9 @@ class Karen:
         Send Start command to the server. Only the AI who create the room can start the gameStatus.game.
         :return: True if the game started, False ow.
         """
+        time.sleep(0.5)
         self.lookStatus()
-
-
+        time.sleep(0.5)
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
@@ -290,6 +293,7 @@ class Karen:
             return actualMap
 
         else:
+            print("Map not retrieved.")
             return None
 
     def nop(self):
@@ -319,21 +323,25 @@ class Karen:
         :param direction: define where the AI wants to shoot.
         :return: 'OK x' where x is the position where the bullet landed
         """
-        return self.serverSocket.send(gameStatus.game.name + " SHOOT " + direction)
+        self.serverSocket.send(gameStatus.game.name + " SHOOT " + direction)
+        print(gameStatus.game.me.name + "shoot at " + str(datetime.now().time()))
+        return True
 
     def waitToStart(self):
         """
         Wait until the game start.
         :return: start strategy if started. False on ERROR.
         """
+        # time.sleep(0.5)
         self.lookStatus()
         while gameStatus.game.state == "LOBBY":
+            # time.sleep(0.5)
             self.lookStatus()
 
         if gameStatus.game.state == "ACTIVE":
             self.strategy(self.strategyType)
         else:
-            print("Error. Game status from LOBBY to " + str(gameStatus.game.state))
+            print("Error. Game status from LOBBY to " + str(gameStatus.game.state) + gameStatus.game.me.name)
             return False
         return True
 
@@ -453,6 +461,7 @@ class Karen:
             print(gameStatus.game.me.name + " è morto.")
 
         while gameStatus.game.state == "ACTIVE":
+            time.sleep(3)
             self.lookStatus()
 
         return True
