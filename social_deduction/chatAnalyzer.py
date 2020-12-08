@@ -6,6 +6,8 @@ from data_structure.gameStatus import *
 from data_structure import gameStatus
 import time
 
+from strategy.pathFinder import findPath
+
 
 class ChatAnalysisThread(Thread):
     def __init__(self, name):
@@ -51,10 +53,12 @@ class ChatAnalysisThread(Thread):
                             # 104223 @GameServer You can now catch the flag!
                         if tmp[2] == 'EMERGENCY':
                             if tmp[4] == 'Called':
-                                None #######  flag globale
+                                gameStatus.game.emergencyMeeting = 1
                                 # EM, fai votare karen
                             if tmp[4] == 'condamned':
                                 # espulso da EM, metti a KILLED il suo stato
+                                if gameStatus.game.me.name == tmp[5]:
+                                    gameStatus.game.me.state = 'KILLED'
                                 for i in gameStatus.game.allies.keys():
                                     ############### contollo che non sia io
                                     # scorri per trovare quello con lo stesso nome
@@ -64,7 +68,7 @@ class ChatAnalysisThread(Thread):
                         if tmp[3] == 'hit':
                             # 654324 @GameServer pinko2 hit pinko
                             # aggiungo pinko a lista killed di pinko2
-                            ################ controllo che non sia io
+
                             if gameStatus.db.playerList.get(tmp[2]) is None:
                                 trovato = 0
                                 team = None
@@ -83,6 +87,8 @@ class ChatAnalysisThread(Thread):
                             gameStatus.db.playerList.get(tmp[2]).kills.append((tmp[4], received_time))
 
                             trovato1 = 0
+                            if gameStatus.game.me.name == tmp[4]:
+                                gameStatus.game.me.state = 'KILLED'
                             for i in gameStatus.game.enemies.keys():
                                 # scorri per trovare quello con lo stesso nome
                                 if gameStatus.game.enemies.get(i).name == tmp[4]:
@@ -150,17 +156,14 @@ class SocialDeductionThread(Thread):
                         #print('\n SD dentro primo if \n')
                         if gameStatus.db.playerList.get(i).team == gameStatus.db.playerList.get(j_name).team:
                             #print('\n SD dentro secondo if \n')
-                            gameStatus.db.playerList.get(i).sdScore += 0.2 #####normalizza in base a numero player
+                            gameStatus.db.playerList.get(i).sdScore += 0.2
                             #print ('\n GIRO DI SD COMPLETO: ' + str(gameStatus.db.playerList.get(i).sdScore))
-
                         #print('\n OK SEMBRO FUNZIONARE: ' +  str(gameStatus.db.playerList.get(i).sdScore) + '\n')
 
             # altre cose poi
-            #startvote (poi)
-            #if gameStatus.db.playerList.get(i).sdScore > 0.8:
-             #   None
-                # setta un flag globale che dice a karen se votare?
-                # karen a ogni iter controlla la variabile e se c'è qualcosa fa la votazione
+            #startvote
+                if gameStatus.db.playerList.get(i).sdScore > 0.8:
+                    gameStatus.game.emergencyMeeting = 1
 
 
 class TuringTestThread(Thread):
@@ -168,13 +171,16 @@ class TuringTestThread(Thread):
         Thread.__init__(self)
 
     def run(self):
+        datetimeFormat = '%H:%M:%S.%f'
+        dt1 = datetime.now()
+        t1 = dt1.time()
         while True:
             '''
             se scrive sempre messaggi corretti grammatcalmente:
                 punteggio verso AI 
             se scrive messaggi sbagliati:
                 punteggio verso HU           
-            '''
+            
             #faccio aggiornamento ogni 5 secondi
             time.sleep(5)
             for i in gameStatus.db.playerList.keys():
@@ -215,3 +221,52 @@ class TuringTestThread(Thread):
                 if gameStatus.db.playerList.get(i).turingScore < 0.2:
                     None
                     # setta un flag globale che dice a karen se votare?
+        '''
+            # Cheating
+            positions_enemies_before = gameStatus.game.enemies
+            positions_allies_before = gameStatus.game.allies
+            time.sleep(1) #AI possono fare al massimo 3 passi
+            positions_enemies_after = gameStatus.game.enemies
+            positions_allies_after = gameStatus.game.allies
+
+            for i in positions_enemies_before.keys():
+                name = positions_enemies_before.get(i).name
+                if gameStatus.db.playerList.get(name).turingScore == 0:
+                    continue
+                else:
+                    path = findPath(gameStatus.game.weightedMap, positions_enemies_before.get(i), positions_enemies_after.get(i).x, positions_enemies_after.get(i).y)
+                    diff = len(path)
+                    if diff > 3:
+                        gameStatus.db.playerList.get(name).turingScore = 0
+                        gameStatus.judgeList.append((name, 'H'))
+                    else:
+                        gameStatus.db.playerList.get(name).turingScore = 0.7
+
+            gameStatus.db.playerList.get(gameStatus.game.me.name).turingScore = 1
+
+            for i in positions_allies_before.keys():
+                name = positions_allies_before.get(i).name
+                if gameStatus.db.playerList.get(name).turingScore == 0:
+                    continue
+                else:
+                    path = findPath(gameStatus.game.weightedMap, positions_allies_before.get(i), positions_allies_after.get(i).x, positions_allies_after.get(i).y)
+                    diff = len(path)
+                    if diff > 3:
+                        gameStatus.db.playerList.get(name).turingScore = 0
+                        gameStatus.judgeList.append((name, 'H'))
+                    else:
+                        gameStatus.db.playerList.get(name).turingScore = 0.7
+
+            dt2 = datetime.now()
+            t2 = dt2.time()
+            diff = datetime.strptime(str(t2), datetimeFormat) - datetime.strptime(str(t1), datetimeFormat)
+            if diff.seconds > 7:
+                for i in gameStatus.db.playerList.keys():
+                    if gameStatus.db.playerList.get(i).turingScore != 0:
+                        gameStatus.db.playerList.get(i).turingScore = 1
+                        gameStatus.judgeList.append((i, 'AI'))
+                #print('HO FINITO \n')
+                #for i in gameStatus.db.playerList.keys():
+                 #   print('VALORE TURING: ' + str(gameStatus.db.playerList.get(i).turingScore) + '\n')
+                #print('ADDIO MONDO CRUDELE \n')
+                return

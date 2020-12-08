@@ -19,9 +19,9 @@ class Game:
     def __init__(self, gameName):
         self.name = gameName
         self.state = None
-        # Valori possibili: 0, 1, 2 (fase 0 senza shoot, fase 1 no ctf, fase 2 gioco normale)
-        self.stage = 0
+        self.stage = 0  # Valori possibili: 0, 1, 2 (fase 0 senza shoot, fase 1 no ctf, fase 2 gioco normale)
         self.me = None
+        self.emergencyMeeting = 0 #flag che segnala emergency meeting
         self.allies = dict()
         self.enemies = dict()
 
@@ -42,4 +42,5 @@ class Game:
 global game
 global db
 global sharedList
-
+global judgeList
+judgeList = []

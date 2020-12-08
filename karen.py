@@ -6,7 +6,7 @@ from connection.chatConnection import ConnectToChat, ReceiveThread
 import re
 
 from social_deduction.chatAnalyzer import *
-from strategy.fuzzyStrategy import *
+from strategy.fuzzyStrategy import FuzzyControlSystem, FuzzyControlSystemImpostor
 from strategy.lowLevelStrategy import lowLevelStrategy, lowLevelStrategyImpostor
 from strategy.deterministicMap import deterministicMap
 from strategy.movement import *
@@ -321,19 +321,39 @@ class Karen:
         :param direction: define where the AI wants to shoot.
         :return: 'OK x' where x is the position where the bullet landed
         """
-        self.serverSocket.send(gameStatus.game.name + " SHOOT " + direction)
-        print(gameStatus.game.me.name + "shoot at " + str(datetime.now().time()))
-        return True
+        return self.serverSocket.send(gameStatus.game.name + " SHOOT " + direction)
+
+    def accuse(self, playerName):
+        """
+         Basic function that send the "ACCUSE" command to the server
+         :param: 'playerName', name of the player that I want to vote
+         :return: 'OK noted', or 'ERROR'
+         """
+        response = self.serverSocket.send(gameStatus.game.name + " ACCUSE " + playerName)
+        if response[0] == "OK":
+            return True
+        return False
+
+    def judge(self, playerName, playerNature):
+        """
+         Basic function that send the "JUDGE" command to the server
+         :param: 'playerName', name of the player that I want to vote
+         :param: 'playerNature', nature of the player
+         :return: 'OK noted',  or 'ERROR'
+         """
+        response = self.serverSocket.send(gameStatus.game.name + " JUDGE " + playerName + ' ' + playerNature)
+        #print('Risposta di judge: ' + response[0])
+        if response[0] == "OK":
+            return True
+        return False
 
     def waitToStart(self):
         """
         Wait until the game start.
         :return: start strategy if started. False on ERROR.
         """
-        # time.sleep(0.5)
         self.lookStatus()
         while gameStatus.game.state == "LOBBY":
-            # time.sleep(0.5)
             self.lookStatus()
 
         if gameStatus.game.state == "ACTIVE":
@@ -378,6 +398,16 @@ class Karen:
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
+            if gameStatus.game.emergencyMeeting == 1:
+                max_imp = None
+                max_vote = 0
+                for i in gameStatus.db.playerList.keys():
+                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
+                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
+                            max_vote = gameStatus.db.playerList.get(i).sdScore
+                            max_imp = gameStatus.db.playerList.get(i).name
+                self.accuse(max_imp)
+                gameStatus.game.emergencyMeeting = 0
 
             nextActions = lowLevelStrategy(self.maxWeight, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
 
@@ -406,11 +436,23 @@ class Karen:
         This function will check if you are an impostor or not and check in which is the game's stage
         :return:
         """
-
+        TS_thread = TuringTestThread()
+        TS_thread.start()
         gameStatus.game.serverMap = self.lookAtMap(True)
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
+            if gameStatus.game.emergencyMeeting == 1:
+                max_imp = None
+                max_vote = 0.2
+                for i in gameStatus.db.playerList.keys():
+                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
+                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
+                            max_vote = gameStatus.db.playerList.get(i).sdScore
+                            max_imp = gameStatus.db.playerList.get(i).name
+                if max_imp is not None:
+                    self.accuse(max_imp)
+                gameStatus.game.emergencyMeeting = 0
             # check the game stage and if i'm an impostor or not
             if gameStatus.game.me.loyalty == gameStatus.game.me.team:
                 if gameStatus.game.stage == 0:
@@ -444,6 +486,22 @@ class Karen:
 
             elif int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
+                    #se c'è qualcosa da votare vota uno else muoviti
+                    if len(gameStatus.judgeList) > 0:
+                        obj = gameStatus.judgeList.pop()
+                        obj_name = obj[0]
+                        obj_nature = obj[1]
+                        print('DA MANDARE: ' + obj_name + ' ' + obj_nature + '\n')
+                        self.judge(obj_name, obj_nature)
+                    else:
+                        try:
+                            direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy)
+                            if direction is not None:
+                                if self.move(direction):
+                                    gameStatus.game.me.x = coordinates[0]
+                                    gameStatus.game.me.y = coordinates[1]
+                        except():
+                            print("Exception generated by movement.move")
 
                     try:
                         direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap,
@@ -476,7 +534,6 @@ class Karen:
             print(gameStatus.game.me.name + " è morto.")
 
         while gameStatus.game.state == "ACTIVE":
-            time.sleep(3)
             self.lookStatus()
 
         return True
