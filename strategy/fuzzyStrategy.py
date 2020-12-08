@@ -78,82 +78,6 @@ def fuzzyValues(maxWeight):
 
     # print('Allies' + str(allies)) # ok
 
-    """
-    Compute distance flag - nearest wall
-    Non solo devo trovare il più vicino ma devo salvare le coordinate
-
-    gameStatus.game.walls[w] identify which wall I'm considering ([wallx, wally])
-    gameStatus.game.walls[w][0] is the x coordinate of the wall
-    gameStatus.game.walls[w][1] is the y coordinate of the wall
-    
-    wall_flag_dist[0] corrisponde al minor numero di passi bandiera-muro (ovvero il muro più vicino)
-    wall_flag_dist[1] la x del muro
-    wall_flag_dist[2] la y del muro
-    """
-    for w in range(len(gameStatus.game.walls)):
-        # print('Muro: ' + str(gameStatus.game.walls[w][0]) + str(gameStatus.game.walls[w][1])) # OK
-        # min distance is equal to min steps to reach it
-
-        """ 
-        Since I cannot pass the walls' coordinates to findPath function because they're non walkable (i.e. zero value into the weightedMap)
-        I check all the sides of the wall to find a walkable cell, tha will be my end direction.
-        If no sides are free, it means that this is not the nearest wall.
-        """
-        wally = gameStatus.game.walls[w][1]
-        wallx = gameStatus.game.walls[w][0]
-
-    
-        if (wallx > 0) & (gameStatus.game.weightedMap[wally][wallx -1] != 0):
-
-            x = wallx - 1
-            wall = len(
-                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x,
-                               wally))
-            # print('Muro x'+str(wall))
-            if (wall < wall_flag_dist[0]):
-                wall_flag_dist[0] = wall
-                wall_flag_dist[1] = x
-                wall_flag_dist[2] = wally
-        # print('posizione' + str(gameStatus.game.weightedMap[wallx][wally]))
-        if (wallx < maxWeight - 1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
-            x = wallx + 1
-            wall = len(
-                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY, x,
-                               wally))
-            # print('Muro x'+str(wall))
-            if (wall < wall_flag_dist[0]):
-                wall_flag_dist[0] = wall
-                wall_flag_dist[1] = x
-                wall_flag_dist[2] = wally
-        if (wally > 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
-            y = wally - 1
-            wall = len(
-                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY,
-                               wallx, y))
-            # print('Muro y' + str(wall))
-            if (wall < wall_flag_dist[0]):
-                wall_flag_dist[0] = wall
-                wall_flag_dist[1] = wallx
-                wall_flag_dist[2] = y
-        if (wally < maxWeight - 1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
-            y = wally + 1
-            wall = len(
-                findPath4Fuzzy(gameStatus.game.weightedMap, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY,
-                               wallx, y))
-            # print('Muro y' + str(wall))
-            if (wall < wall_flag_dist[0]):
-                wall_flag_dist[0] = wall
-                wall_flag_dist[1] = wallx
-                wall_flag_dist[2] = y
-
-    # ulteriore controllo: quanti altri muri ci sono intorno al muro più vicino alla bandiera
-    # todo: non va bene rifare
-    for w in range(len(gameStatus.game.walls)):
-        # controllo le x e le y del muro
-        if (wall_flag_dist[1] == gameStatus.game.walls[w][0]) | (wall_flag_dist[2] == gameStatus.game.walls[w][
-            1]):  # controllo se muri hanno la stessa ascissa o ordinata
-            num_walls_flag += 1
-    # print ('Quanti muri:' + str(num_walls_flag))
 
     """
     Compute distance me - nearest wall
@@ -168,53 +92,28 @@ def fuzzyValues(maxWeight):
         wallx = gameStatus.game.walls[w][0]
 
         if gameStatus.game.me.x <= int(gameStatus.game.mapWidth/2):
-            if (wallx > 0) & (gameStatus.game.weightedMap[wally][wallx -1] != 0):
+            if (wallx > 0) and (gameStatus.game.weightedMap[wally][wallx -1] != 0):
                 x = wallx - 1
                 wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
-
                 # print('Muro x'+str(wall))
-                if wall < wall_me_dist[0]:
+                if wall < wall_me_dist[0] and wall!=0:
                     wall_me_dist[0] = wall
                     wall_me_dist[1] = x
                     wall_me_dist[2] = wally
         else:
-            if (wallx < gameStatus.game.mapWidth-1) & (gameStatus.game.weightedMap[wally][wallx + 1] != 0):
-                x = wallx + 1
-                wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
+            try:
+                if (wallx < gameStatus.game.mapWidth-1) and (gameStatus.game.weightedMap[wally][wallx + 1] != 0):
+                    x = wallx + 1
+                    wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
 
-                # print('Muro x'+str(wall))
-                if wall < wall_me_dist[0]:
-                    wall_me_dist[0] = wall
-                    wall_me_dist[1] = x
-                    wall_me_dist[2] = wally
-        """
-        if (wallx < maxWeight - 1) & (gameStatus.game.weightedMap[wallx + 1][wally] != 0):
-            x = wallx + 1
-            wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, x, wally))
-            # print('Muro x'+str(wall))
-            if (wall < wall_me_dist[0]):
-                wall_me_dist[0] = wall
-                wall_me_dist[1] = x
-                wall_me_dist[2] = wally
-        if (wally > 0) & (gameStatus.game.weightedMap[wallx][wally - 1] != 0):
-            y = wally - 1
-            wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, wallx, y))
-            # print('Muro y' + str(wall))
-            if (wall < wall_me_dist[0]):
-                wall_me_dist[0] = wall
-                wall_me_dist[1] = wallx
-                wall_me_dist[2] = y
-        if (wally < maxWeight - 1) & (gameStatus.game.weightedMap[wallx][wally + 1] != 0):
-            y = wally + 1
-            wall = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, wallx, y))
-            # print('Muro y' + str(wall))
-            if (wall < wall_me_dist[0]):
-                wall_me_dist[0] = wall
-                wall_me_dist[1] = wallx
-                wall_me_dist[2] = y
-        # print('Wall Distance: ' + str(wall_me_dist[0]) +' Coordinates: ' + str(wall_me_dist[1]) + ' '+ str(wall_me_dist[2]))
-        """
-    # ulteriore controllo: quanti altri muri ci sono intorno al muro più vicino alla bandiera
+                    # print('Muro x'+str(wall))
+                    if wall < wall_me_dist[0] and wall!=0:
+                        wall_me_dist[0] = wall
+                        wall_me_dist[1] = x
+                        wall_me_dist[2] = wally
+            except:
+
+                print("EXCEPTION X " + str(wallx) + " Y " + str(wally))
 
     # todo: non va bene rifare
     for w in range(len(gameStatus.game.walls)):
@@ -460,15 +359,15 @@ def FuzzyControlSystem(maxWeight):
 
     elif outputValue in range(20, 30):
 
-        x = flagWallDist[2]
-        y = flagWallDist[1]
+        x = flagWallDist[1]
+        y = flagWallDist[2]
 
         print(gameStatus.game.me.name + " vado al muro più vicino alla bandiera: " + str(x) + " " + str(y))
 
     else:
 
-        x = meWallDist[2]
-        y = meWallDist[1]
+        x = meWallDist[1]
+        y = meWallDist[2]
 
         print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
@@ -723,7 +622,7 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
         maxWeight)
 
     sim.input['energy'] = int(myEnergy)
-    sim.input['d_flag'] = flagDistance
+    sim.input['d_flag'] = flagDistance # TODO check unexpected input
     sim.input['d_recharge'] = nearestRecharge[0]
     sim.input['num_allies'] = numberOfAllies
     sim.input['allies_dist'] = allies[0]
