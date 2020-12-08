@@ -8,8 +8,6 @@ class SD_Player:
         self.name = name
         self.team = team
         self.turingScore = 0.5
-        self.turingAccuse = 0.5 #storico del TS
-        self.isTuringChanged = False # flag per
         self.sdScore = 0
         self.kills = []
         self.messages = []

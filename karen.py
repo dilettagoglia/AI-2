@@ -55,7 +55,6 @@ class Karen:
         t_r = ReceiveThread('Receive', self.chatSocket.net, gameStatus.game.me.name)
         t_r.start()
 
-
     def createGame(self, gameName, flags):
         """
         Create a new Game
@@ -141,7 +140,7 @@ class Karen:
         """
         self.lookStatus()
 
-
+        time.sleep(5)
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
@@ -278,7 +277,6 @@ class Karen:
                     gameStatus.game.mapWidth = len(actualMap[0])
                     gameStatus.game.mapHeight = len(actualMap)
 
-
             return actualMap
 
         else:
@@ -311,6 +309,30 @@ class Karen:
         :return: 'OK x' where x is the position where the bullet landed
         """
         return self.serverSocket.send(gameStatus.game.name + " SHOOT " + direction)
+
+    def accuse(self, playerName):
+        """
+         Basic function that send the "ACCUSE" command to the server
+         :param: 'playerName', name of the player that I want to vote
+         :return: 'OK noted', or 'ERROR'
+         """
+        response = self.serverSocket.send(gameStatus.game.name + " ACCUSE " + playerName)
+        if response[0] == "OK":
+            return True
+        return False
+
+    def judge(self, playerName, playerNature):
+        """
+         Basic function that send the "JUDGE" command to the server
+         :param: 'playerName', name of the player that I want to vote
+         :param: 'playerNature', nature of the player
+         :return: 'OK noted',  or 'ERROR'
+         """
+        response = self.serverSocket.send(gameStatus.game.name + " JUDGE " + playerName + ' ' + playerNature)
+        #print('Risposta di judge: ' + response[0])
+        if response[0] == "OK":
+            return True
+        return False
 
     def waitToStart(self):
         """
@@ -352,8 +374,6 @@ class Karen:
             print("Hai sbagliato nome della strategy. Riprova controllando i param di Karen.")
             return False
 
-
-
     def llStrategy(self):
         """
         Call the lowLevelStrategy. Run to the flag with only basic forecasting decisions *PROTO1*
@@ -365,6 +385,16 @@ class Karen:
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
+            if gameStatus.game.emergencyMeeting == 1:
+                max_imp = None
+                max_vote = 0
+                for i in gameStatus.db.playerList.keys():
+                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
+                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
+                            max_vote = gameStatus.db.playerList.get(i).sdScore
+                            max_imp = gameStatus.db.playerList.get(i).name
+                self.accuse(max_imp)
+                gameStatus.game.emergencyMeeting = 0
 
             nextActions = lowLevelStrategy(self.maxWeight, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
 
@@ -393,11 +423,23 @@ class Karen:
         This function will check if you are an impostor or not and check in which is the game's stage
         :return:
         """
-
+        TS_thread = TuringTestThread()
+        TS_thread.start()
         gameStatus.game.serverMap = self.lookAtMap(True)
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
+            if gameStatus.game.emergencyMeeting == 1:
+                max_imp = None
+                max_vote = 0.2
+                for i in gameStatus.db.playerList.keys():
+                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
+                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
+                            max_vote = gameStatus.db.playerList.get(i).sdScore
+                            max_imp = gameStatus.db.playerList.get(i).name
+                if max_imp is not None:
+                    self.accuse(max_imp)
+                gameStatus.game.emergencyMeeting = 0
             # check the game stage and if i'm an impostor or not
             if gameStatus.game.me.loyalty == gameStatus.game.me.team:
                 # if gameStatus.game.stage == 0:
@@ -407,21 +449,27 @@ class Karen:
                 # else:
                 endx, endy, nearestEnemyDistance = FuzzyControlSystem(gameStatus.game.me, self.maxWeight)
             else:
-
                 endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(gameStatus.game.me, self.maxWeight)
                 print(gameStatus.game.me.name + " impostor")
             # Avoid useless LOOK if I can't die moving
             if int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
-
-                    try:
-                        direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy)
-                        if direction is not None:
-                            if self.move(direction):
-                                gameStatus.game.me.x = coordinates[0]
-                                gameStatus.game.me.y = coordinates[1]
-                    except():
-                        print("Exception generated by movement.move")
+                    #se c'è qualcosa da votare vota uno else muoviti
+                    if len(gameStatus.judgeList) > 0:
+                        obj = gameStatus.judgeList.pop()
+                        obj_name = obj[0]
+                        obj_nature = obj[1]
+                        print('DA MANDARE: ' + obj_name + ' ' + obj_nature + '\n')
+                        self.judge(obj_name, obj_nature)
+                    else:
+                        try:
+                            direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy)
+                            if direction is not None:
+                                if self.move(direction):
+                                    gameStatus.game.me.x = coordinates[0]
+                                    gameStatus.game.me.y = coordinates[1]
+                        except():
+                            print("Exception generated by movement.move")
             else:
                 if gameStatus.game.me.loyalty == gameStatus.game.me.team:
 
