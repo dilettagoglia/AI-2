@@ -141,9 +141,7 @@ class Karen:
         Send Start command to the server. Only the AI who create the room can start the gameStatus.game.
         :return: True if the game started, False ow.
         """
-        time.sleep(0.5)
         self.lookStatus()
-        time.sleep(0.5)
 
         response = self.serverSocket.send(gameStatus.game.name + " START")
 
@@ -353,6 +351,7 @@ class Karen:
         :return: start strategy if started. False on ERROR.
         """
         self.lookStatus()
+
         while gameStatus.game.state == "LOBBY":
             self.lookStatus()
 

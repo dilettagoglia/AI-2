@@ -13,16 +13,16 @@ def creator(name, gameName):
     k = Karen(name, 'fuzzyStrategy')
     time.sleep(0.5)
     if k.createGame(gameName, "BQ1"):
-        k.joinGame(gameName, name, "AI", "AI-02")
+        k.joinGame(gameName, "AI", "AI", "AI-02")
         while True:
-            time.sleep(2)
+            time.sleep(1)
             k.startGame()
 
 
 def gamer(name, gameName):
     print(name)
     k = Karen(name, 'fuzzyStrategy')
-    k.joinGame(gameName, name, "AI", "AI-02")
+    k.joinGame(gameName, "AI", "AI", "AI-02")
     result = k.waitToStart()
 
 
