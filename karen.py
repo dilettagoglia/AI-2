@@ -405,7 +405,8 @@ class Karen:
                         if gameStatus.db.playerList.get(i).sdScore > max_vote:
                             max_vote = gameStatus.db.playerList.get(i).sdScore
                             max_imp = gameStatus.db.playerList.get(i).name
-                self.accuse(max_imp)
+                if max_imp is not None:
+                    self.accuse(max_imp)
                 gameStatus.game.emergencyMeeting = 0
 
             nextActions = lowLevelStrategy(self.maxWeight, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
