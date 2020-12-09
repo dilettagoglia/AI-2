@@ -230,32 +230,41 @@ class TuringTestThread(Thread):
             positions_allies_after = gameStatus.game.allies
 
             for i in positions_enemies_before.keys():
-                name = positions_enemies_before.get(i).name
-                if gameStatus.db.playerList.get(name).turingScore == 0:
-                    continue
-                else:
-                    path = findPath(gameStatus.game.weightedMap, positions_enemies_before.get(i), positions_enemies_after.get(i).x, positions_enemies_after.get(i).y)
-                    diff = len(path)
-                    if diff > 3:
-                        gameStatus.db.playerList.get(name).turingScore = 0
-                        gameStatus.judgeList.append((name, 'H'))
+                if positions_enemies_before.get(i).x == positions_enemies_after.get(i).x and positions_enemies_before.get(i).y == positions_enemies_after.get(i).y:
+                    name = positions_enemies_before.get(i).name
+                    if gameStatus.db.playerList.get(name).turingScore == 0:
+                        continue
                     else:
-                        gameStatus.db.playerList.get(name).turingScore = 0.7
+                        path = findPath(gameStatus.game.weightedMap, positions_enemies_before.get(i), positions_enemies_after.get(i).x, positions_enemies_after.get(i).y)
+                        diff = len(path)
+                        if diff > 3:
+                            gameStatus.db.playerList.get(name).turingScore = 0
+                            gameStatus.judgeList.append((name, 'H'))
+                        else:
+                            gameStatus.db.playerList.get(name).turingScore = 0.7
+                else:
+                    continue
 
             gameStatus.db.playerList.get(gameStatus.game.me.name).turingScore = 1
 
             for i in positions_allies_before.keys():
-                name = positions_allies_before.get(i).name
-                if gameStatus.db.playerList.get(name).turingScore == 0:
-                    continue
-                else:
-                    path = findPath(gameStatus.game.weightedMap, positions_allies_before.get(i), positions_allies_after.get(i).x, positions_allies_after.get(i).y)
-                    diff = len(path)
-                    if diff > 3:
-                        gameStatus.db.playerList.get(name).turingScore = 0
-                        gameStatus.judgeList.append((name, 'H'))
+                if positions_allies_before.get(i).x == positions_allies_after.get(i).x and positions_allies_before.get(i).y == positions_allies_after.get(i).y:
+                    name = positions_allies_before.get(i).name
+                    if gameStatus.db.playerList.get(name).turingScore == 0:
+                        continue
                     else:
-                        gameStatus.db.playerList.get(name).turingScore = 0.7
+                        try:
+                            path = findPath(gameStatus.game.weightedMap, positions_allies_before.get(i), positions_allies_after.get(i).x, positions_allies_after.get(i).y)
+                            diff = len(path)
+                        except:
+                            diff = 0
+                        if diff > 3:
+                            gameStatus.db.playerList.get(name).turingScore = 0
+                            gameStatus.judgeList.append((name, 'H'))
+                        else:
+                            gameStatus.db.playerList.get(name).turingScore = 0.7
+                else:
+                    continue
 
             dt2 = datetime.now()
             t2 = dt2.time()

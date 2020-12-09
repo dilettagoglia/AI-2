@@ -34,7 +34,7 @@ if __name__ == '__main__':
     process.append(p)
     time.sleep(1)
 
-    for i in range(0, 20):
+    for i in range(0, 3):
         p = Process(target=gamer, args=('Karen' + str(i), var))
         p.start()
         process.append(p)
