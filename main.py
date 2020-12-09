@@ -15,7 +15,7 @@ def creator(name, gameName):
     if k.createGame(gameName, "BQ1"):
         k.joinGame(gameName, "AI", "AI", "AI-02")
         while True:
-            time.sleep(1)
+            time.sleep(10)
             k.startGame()
 
 

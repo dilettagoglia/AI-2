@@ -340,7 +340,7 @@ class Karen:
          :return: 'OK noted',  or 'ERROR'
          """
         response = self.serverSocket.send(gameStatus.game.name + " JUDGE " + playerName + ' ' + playerNature)
-        #print('Risposta di judge: ' + response[0])
+        # print('Risposta di judge: ' + response[0])
         if response[0] == "OK":
             return True
         return False
@@ -470,6 +470,7 @@ class Karen:
             # Avoid useless LOOK if I can't die moving
 
             if gameStatus.game.stage == 0:
+                print(str(gameStatus.game.me.x) + " " + str(gameStatus.game.me.y) + " " + str(endx) + " " + str(endy))
                 for i in range(1, len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy))):
                     try:
                         direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap,
@@ -486,16 +487,17 @@ class Karen:
 
             elif int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
-                    #se c'è qualcosa da votare vota uno else muoviti
+                    # se c'è qualcosa da votare vota uno else muoviti
                     if len(gameStatus.judgeList) > 0:
                         obj = gameStatus.judgeList.pop()
                         obj_name = obj[0]
                         obj_nature = obj[1]
-                        print('DA MANDARE: ' + obj_name + ' ' + obj_nature + '\n')
+                        print(str(gameStatus.game.me.name) + 'giudica : ' + obj_name + ' ' + obj_nature + '\n')
                         self.judge(obj_name, obj_nature)
                     else:
                         try:
-                            direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy)
+                            direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap,
+                                                                                      gameStatus.game.me, endx, endy)
                             if direction is not None:
                                 if self.move(direction):
                                     gameStatus.game.me.x = coordinates[0]
@@ -535,5 +537,10 @@ class Karen:
 
         while gameStatus.game.state == "ACTIVE":
             self.lookStatus()
-
+            if len(gameStatus.judgeList) > 0:
+                obj = gameStatus.judgeList.pop()
+                obj_name = obj[0]
+                obj_nature = obj[1]
+                print('DA MANDARE: ' + obj_name + ' ' + obj_nature + '\n')
+                self.judge(obj_name, obj_nature)
         return True

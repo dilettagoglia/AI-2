@@ -24,7 +24,8 @@ class ChatAnalysisThread(Thread):
             team = gameStatus.game.allies.get(i).team
             pl = SD_Player(name, team)
             gameStatus.db.playerList[name] = pl
-        #print('LISTA IN DB: ' + str(gameStatus.db.playerList))
+        # print('LISTA IN DB: ' + str(gameStatus.db.playerList))
+
     def run(self):
         while True:
             if len(gameStatus.sharedList) > 0:
@@ -32,7 +33,7 @@ class ChatAnalysisThread(Thread):
                 received = gameStatus.sharedList.pop()  # è coppia stringa timestamp
                 received_str = received[0]
                 received_time = received[1]
-                #print('\n TIME: ' + str(received_time) + '\n')
+                # print('\n TIME: ' + str(received_time) + '\n')
                 tmp = re.split(' |\n', received_str)
                 if tmp[0] == '#GLOBAL':
                     if tmp[1] == '@GameServer':
@@ -69,22 +70,8 @@ class ChatAnalysisThread(Thread):
                             # 654324 @GameServer pinko2 hit pinko
                             # aggiungo pinko a lista killed di pinko2
 
-                            if gameStatus.db.playerList.get(tmp[2]) is None:
-                                trovato = 0
-                                team = None
-                                for i in gameStatus.game.enemies.keys():
-                                    if gameStatus.game.enemies.get(i).name == tmp[2]:
-                                        team = gameStatus.game.enemies.get(i).team
-                                        trovato = 1
-                                        break
-                                if trovato == 0:
-                                    for i in gameStatus.game.allies.keys():
-                                        if gameStatus.game.allies.get(i).name == tmp[2]:
-                                            team = gameStatus.game.allies.get(i).team
-                                            break
-                                pl = SD_Player(tmp[2], team)
-                                gameStatus.db.playerList[tmp[2]] = pl  # aggiungi chiave al dizionario
-                            gameStatus.db.playerList.get(tmp[2]).kills.append((tmp[4], received_time))
+                            if gameStatus.db.playerList.get(tmp[2]) is not None:
+                                gameStatus.db.playerList.get(tmp[2]).kills.append((tmp[4], received_time))
 
                             trovato1 = 0
                             if gameStatus.game.me.name == tmp[4]:
@@ -103,26 +90,10 @@ class ChatAnalysisThread(Thread):
 
                     else:
                         # messaggi player
-                        if gameStatus.db.playerList.get(tmp[1]) is None:
-                            trovato = 0
-                            team = None
-                            for i in gameStatus.game.enemies.keys():
-                                if gameStatus.game.enemies.get(i).name == tmp[1]:
-                                    team = gameStatus.game.enemies.get(i).team
-                                    trovato = 1
-                                    break
-                            if trovato == 0:
-                                for i in gameStatus.game.allies.keys():
-                                    if gameStatus.game.allies.get(i).name == tmp[1]:
-                                        team = gameStatus.game.allies.get(i).team
-                                        trovato = 1
-                                        break
-                            pl = SD_Player(tmp[1], team)
-                            gameStatus.db.playerList[tmp[1]] = pl  # aggiungi chiave al dizionario
-                        # cerco nel decisionDB il player corrispondente e aggiungo alla lista di messaggi inviati il messaggio
-                        gameStatus.db.playerList.get(tmp[1]).messages.append((received_str, received_time))
-                        #for i in gameStatus.db.playerList:
-                            #print(gameStatus.db.playerList.get(i).messages)
+                        if gameStatus.db.playerList.get(tmp[1]) is not None:
+                            gameStatus.db.playerList.get(tmp[1]).messages.append((received_str, received_time))
+                        # for i in gameStatus.db.playerList:
+                        # print(gameStatus.db.playerList.get(i).messages)
 
 
 class SocialDeductionThread(Thread):
@@ -145,23 +116,24 @@ class SocialDeductionThread(Thread):
             time.sleep(5)
             # controlla che abbia ucciso compagni di squadra
             for i in gameStatus.db.playerList.keys():
-                #print('\n SD dentro for, ora farebbe cose \n')
-                for j in range (0, len(gameStatus.db.playerList.get(i).kills)):
-                    #print ('\n SD dentro seconndo for \n')
+                # print('\n SD dentro for, ora farebbe cose \n')
+                for j in range(0, len(gameStatus.db.playerList.get(i).kills)):
+                    # print ('\n SD dentro seconndo for \n')
                     coppia = gameStatus.db.playerList.get(i).kills[j]
                     j_name = coppia[0]
                     j_time = coppia[1]
-                    #print('\n SD coppia scorporata: ' + str(j_name) + '\n')
-                    if gameStatus.db.playerList.get(i).team is not None and gameStatus.db.playerList.get(j_name).team is not None:
-                        #print('\n SD dentro primo if \n')
+                    # print('\n SD coppia scorporata: ' + str(j_name) + '\n')
+                    if gameStatus.db.playerList.get(i).team is not None and gameStatus.db.playerList.get(
+                            j_name).team is not None:
+                        # print('\n SD dentro primo if \n')
                         if gameStatus.db.playerList.get(i).team == gameStatus.db.playerList.get(j_name).team:
-                            #print('\n SD dentro secondo if \n')
+                            # print('\n SD dentro secondo if \n')
                             gameStatus.db.playerList.get(i).sdScore += 0.2
-                            #print ('\n GIRO DI SD COMPLETO: ' + str(gameStatus.db.playerList.get(i).sdScore))
-                        #print('\n OK SEMBRO FUNZIONARE: ' +  str(gameStatus.db.playerList.get(i).sdScore) + '\n')
+                            # print ('\n GIRO DI SD COMPLETO: ' + str(gameStatus.db.playerList.get(i).sdScore))
+                        # print('\n OK SEMBRO FUNZIONARE: ' +  str(gameStatus.db.playerList.get(i).sdScore) + '\n')
 
-            # altre cose poi
-            #startvote
+                # altre cose poi
+                # startvote
                 if gameStatus.db.playerList.get(i).sdScore > 0.8:
                     gameStatus.game.emergencyMeeting = 1
 
@@ -225,17 +197,19 @@ class TuringTestThread(Thread):
             # Cheating
             positions_enemies_before = gameStatus.game.enemies
             positions_allies_before = gameStatus.game.allies
-            time.sleep(1) #AI possono fare al massimo 3 passi
+            time.sleep(1)  # AI possono fare al massimo 3 passi
             positions_enemies_after = gameStatus.game.enemies
             positions_allies_after = gameStatus.game.allies
 
             for i in positions_enemies_before.keys():
-                if positions_enemies_before.get(i).x == positions_enemies_after.get(i).x and positions_enemies_before.get(i).y == positions_enemies_after.get(i).y:
+                if positions_enemies_before.get(i).x == positions_enemies_after.get(
+                        i).x and positions_enemies_before.get(i).y == positions_enemies_after.get(i).y:
                     name = positions_enemies_before.get(i).name
                     if gameStatus.db.playerList.get(name).turingScore == 0:
                         continue
                     else:
-                        path = findPath(gameStatus.game.weightedMap, positions_enemies_before.get(i), positions_enemies_after.get(i).x, positions_enemies_after.get(i).y)
+                        path = findPath(gameStatus.game.weightedMap, positions_enemies_before.get(i),
+                                        positions_enemies_after.get(i).x, positions_enemies_after.get(i).y)
                         diff = len(path)
                         if diff > 3:
                             gameStatus.db.playerList.get(name).turingScore = 0
@@ -248,13 +222,15 @@ class TuringTestThread(Thread):
             gameStatus.db.playerList.get(gameStatus.game.me.name).turingScore = 1
 
             for i in positions_allies_before.keys():
-                if positions_allies_before.get(i).x == positions_allies_after.get(i).x and positions_allies_before.get(i).y == positions_allies_after.get(i).y:
+                if positions_allies_before.get(i).x == positions_allies_after.get(i).x and positions_allies_before.get(
+                        i).y == positions_allies_after.get(i).y:
                     name = positions_allies_before.get(i).name
                     if gameStatus.db.playerList.get(name).turingScore == 0:
                         continue
                     else:
                         try:
-                            path = findPath(gameStatus.game.weightedMap, positions_allies_before.get(i), positions_allies_after.get(i).x, positions_allies_after.get(i).y)
+                            path = findPath(gameStatus.game.weightedMap, positions_allies_before.get(i),
+                                            positions_allies_after.get(i).x, positions_allies_after.get(i).y)
                             diff = len(path)
                         except:
                             diff = 0
@@ -274,8 +250,8 @@ class TuringTestThread(Thread):
                     if gameStatus.db.playerList.get(i).turingScore != 0:
                         gameStatus.db.playerList.get(i).turingScore = 1
                         gameStatus.judgeList.append((i, 'AI'))
-                #print('HO FINITO \n')
-                #for i in gameStatus.db.playerList.keys():
-                 #   print('VALORE TURING: ' + str(gameStatus.db.playerList.get(i).turingScore) + '\n')
-                #print('ADDIO MONDO CRUDELE \n')
+                # print('HO FINITO \n')
+                # for i in gameStatus.db.playerList.keys():
+                #   print('VALORE TURING: ' + str(gameStatus.db.playerList.get(i).turingScore) + '\n')
+                # print('ADDIO MONDO CRUDELE \n')
                 return

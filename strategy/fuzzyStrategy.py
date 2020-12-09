@@ -76,7 +76,8 @@ def fuzzyValues(maxWeight):
                 allies[0] = all
                 allies[1] = gameStatus.game.allies[k].x  # todo controllare correttezza coordinate x e y
                 allies[2] = gameStatus.game.allies[k].y
-
+        else:
+            num_allies -= 1
     # print('Allies' + str(allies)) # ok
 
     """
@@ -162,7 +163,7 @@ def fuzzyValues(maxWeight):
             """
             Barriers and recharge are walkable objects into the weightedMap, so they do not need the coordinate control on all the 4 sides.
             The end coordinates of the findPath function can be exaclty those of the barrier/recharge.
-            """
+            
 
             # barriera più vicina alla bandiera
             if gameStatus.game.serverMap[i][j] == "&":
@@ -172,7 +173,7 @@ def fuzzyValues(maxWeight):
                     d_flag_barr[0] = barr
                     d_flag_barr[1] = j
                     d_flag_barr[2] = i
-
+            """
             # recharge più vicino alla mia posizione corrente
             if gameStatus.game.serverMap[i][j] == "$":
                 tmp = len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, i, j))
@@ -373,6 +374,10 @@ def FuzzyControlSystemStage0(maxWeight):
 
         # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
 
+    if x == maxWeight and y == maxWeight:
+        x = safeZoneDistance[1]
+        y = safeZoneDistance[2]
+
     return x, y, nearestEnemyDistance[0]
 
 
@@ -448,7 +453,8 @@ def FuzzyControlSystemStage1(maxWeight):
     goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]),
                          output['goToKill'])
     goToFlag = ctrl.Rule(
-        (d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] & num_enemies['poor'], output["goToFlag"])
+        (d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] &
+        num_enemies['poor'], output["goToFlag"])
 
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
 
@@ -529,11 +535,12 @@ def FuzzyControlSystemStage1(maxWeight):
         print(gameStatus.game.me.name + " vai alla bandiera: " + str(x) + " " + str(y))
 
     else:
+        x = nearestRecharge[1]
+        y = nearestRecharge[2]
 
-        x = d_recharge[1]
-        y = d_recharge[2]
-
-        # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+    if x == maxWeight and y == maxWeight:
+        x = safeZoneDistance[1]
+        y = safeZoneDistance[2]
 
     return x, y, nearestEnemyDistance[0]
 
@@ -609,9 +616,9 @@ def FuzzyControlSystemStage2(maxWeight):
 
     goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]),
                          output['goToKill'])
-    goToFlag = ctrl.Rule(
-        (d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] &
-        num_enemies['poor'], output["goToFlag"])
+    goToFlag = ctrl.Rule(d_flag['poor'] |
+                         ((d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy[
+                             'good']), output["goToFlag"])
 
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
 
@@ -696,10 +703,13 @@ def FuzzyControlSystemStage2(maxWeight):
         x = nearestRecharge[1]
         y = nearestRecharge[2]
 
-        # print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+        print(gameStatus.game.me.name + " vado al muro più vicino a me: " + str(x) + " " + str(y))
+
+    if x == maxWeight and y == maxWeight:
+        x = gameStatus.game.wantedFlagX
+        y = gameStatus.game.wantedFlagY
 
     return x, y, nearestEnemyDistance[0]
-
 
 
 # nuovo per l'impostor DA AGGIORNARE
@@ -721,7 +731,7 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
 
     # New Antecedent/Consequent objects hold universe variables and membership functions
 
-    energy = ctrl.Antecedent(np.arange(0, 256, 10), 'energy')
+    energy = ctrl.Antecedent(np.arange(0, 256), 'energy')
     num_enemies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.enemies), 1), 'num_enemies')
     d_recharge = ctrl.Antecedent(np.arange(0, int(maxWeight * 3), 1), 'd_recharge')
     num_allies = ctrl.Antecedent(np.arange(0, len(gameStatus.game.allies), 1), 'num_allies')  # how many
@@ -803,8 +813,13 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
     if outputValue in range(0, 10):
         # recharge
 
-        x = nearestRecharge[1]
-        y = nearestRecharge[2]
+        if nearestRecharge[0] != maxWeight:
+            x = nearestRecharge[1]
+            y = nearestRecharge[2]
+        else:
+            x = safeZoneDistance[1]
+            y = safeZoneDistance[2]
+
         print("IMPOSTOR : " + gameStatus.game.me.name + " vado in rech" + str(x) + " " + str(y))
 
     elif outputValue in range(10, 20):
@@ -821,4 +836,7 @@ def FuzzyControlSystemImpostor(maxWeight):  # nuovo
         print("IMPOSTOR : " + gameStatus.game.me.name + " vado ad uccidere " + str(x) + " " + str(y))
     # Check if i will be in safeZone after this movement
 
+    if x == maxWeight and y == maxWeight:
+        x = safeZoneDistance[1]
+        y = safeZoneDistance[2]
     return x, y, nearestEnemyDistance[0]
