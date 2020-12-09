@@ -426,15 +426,10 @@ def FuzzyControlSystemStage1(maxWeight):
     # poor mediocre average decent good
 
     behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (
-            num_walls_flag['average'] | num_walls_flag['good']) |
-                               (d_flag['poor'] | d_flag['average']) & (wall_me_dist['good']) & (
-                                       num_walls_flag['average'] | num_walls_flag['good'])
+            num_walls_flag['average'] | num_walls_flag['good'])
                                , output['hideBehindFlagWall'])
 
-    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) &wall_me_dist['poor']) |
-                             (d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good']) |
-                             (d_flag['good'] & num_walls_flag['poor'])
-                             , output['hideBehindMyWall'])
+    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good']), output['hideBehindMyWall'])
 
     staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) &  # ci sono molti nemici
                          (d_safeZone['good']) &  # non sono al sicuro
@@ -448,11 +443,11 @@ def FuzzyControlSystemStage1(maxWeight):
                            ((energy['poor'] | energy['average']) & d_recharge['poor'] & num_enemies['good'])
                            , output['goToRecharge'])
 
-    goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]),
-                         output['goToKill'])
+    goToKill = ctrl.Rule((num_enemies['poor'] | num_enemies['average']) & (energy["average"] | energy["good"]) & d_flag['good'],
+                            output['goToKill'])
     goToFlag = ctrl.Rule(d_flag['poor'] |
-        ((d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] &
-        num_enemies['poor']), output["goToFlag"])
+                        ((d_safeZone['poor'] | d_safeZone['average']) & (d_flag['poor'] | d_flag['average']) & energy['good'] &
+                        num_enemies['poor']), output["goToFlag"])
 
     # barrier = ctrl.Rule( d_flag_barr['poor'] , output['useTheBarrier'])
 
@@ -586,21 +581,14 @@ def FuzzyControlSystemStage2(maxWeight):
     d_recharge.automf(3)
     # poor mediocre average decent good
 
-    behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (
-            num_walls_flag['average'] | num_walls_flag['good']) |
-                               (d_flag['poor'] | d_flag['average']) & (wall_me_dist['good']) & (
-                                       num_walls_flag['average'] | num_walls_flag['good'])
+    behindFlagWall = ctrl.Rule((d_flag['poor'] | d_flag['average']) & wall_flag_dist['poor'] & (num_walls_flag['average'] | num_walls_flag['good'])
                                , output['hideBehindFlagWall'])
 
-    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) &wall_me_dist['poor']) |
-                             (d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good']) |
-                             (d_flag['good'] & num_walls_flag['poor'])
-                             , output['hideBehindMyWall'])
+    behindMyWall = ctrl.Rule((d_flag['good'] & (num_enemies['good'] | num_enemies['average']) & wall_me_dist['poor'] & num_walls_me['good'] & num_walls_flag['poor']), output['hideBehindMyWall'])
 
     staysafe = ctrl.Rule((num_enemies['average'] | num_enemies['good']) &  # ci sono molti nemici
                          (d_safeZone['good']) &  # non sono al sicuro
-                         (num_walls_flag['poor'] | num_walls_me[
-                             'poor']) &  # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
+                         (num_walls_flag['poor'] | num_walls_me['poor']) &  # non ci sono agglomerati di muri né vicino a me né vicino alla bandiera
                          (wall_me_dist['good'] | wall_flag_dist['good'])  # sono troppo lontano da qualsiasi muro
                          , output['goToSafePlace'])
 
