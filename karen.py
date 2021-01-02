@@ -1,11 +1,12 @@
 import configparser
-from data_structure import gameStatus
-from data_structure.gameStatus import *
-from connection.serverConnection import *
-from connection.chatConnection import ConnectToChat, ReceiveThread
 import re
+import time
 
-from social_deduction.chatAnalyzer import *
+from analyzers.chatAnalyzer import chatAnalyzer
+from analyzers.gameAnalyzer import gameAnalyzer
+from analyzers.playersAnalyzer import playersAnalyzer
+from connection.chatConnection import ConnectToChat, ReceiveThread
+from connection.serverConnection import connectToServer
 from strategy.fuzzyStrategy import *
 from strategy.lowLevelStrategy import lowLevelStrategy, lowLevelStrategyImpostor
 from strategy.deterministicMap import deterministicMap
@@ -26,8 +27,6 @@ class Karen:
         """
         # Identify the Karen as a Player
         gameStatus.game = Game(None)
-        gameStatus.db = DecisionsDB()
-        gameStatus.sharedList = []
         gameStatus.game.me = Player(name)
 
         gameStatus.game.me.movement = rb_movement(movement)
@@ -352,6 +351,9 @@ class Karen:
         """
         self.lookStatus()
 
+        chat_analyzer = chatAnalyzer("chatAnalyzer")
+        chat_analyzer.start()
+
         while gameStatus.game.state == "LOBBY":
             self.lookStatus()
 
@@ -368,12 +370,12 @@ class Karen:
         :param strategyType: the type of the strategy. Defined in Karen's init
         :return: -
         """
-        pl = SD_Player(gameStatus.game.me.name, gameStatus.game.me.team)
-        gameStatus.db.playerList[gameStatus.game.me.name] = pl
-        threadino = ChatAnalysisThread(gameStatus.game.me.name)
-        threadino.start()
-        SD_thread = SocialDeductionThread()
-        SD_thread.start()
+        players_analyzer = playersAnalyzer("playersAnalyzer")
+        players_analyzer.start()
+
+
+        game_analyzer = gameAnalyzer("gameAnalyzer")
+        game_analyzer.start()
 
         if strategyType == "lowLevelStrategy":
             self.llStrategy()
@@ -397,17 +399,7 @@ class Karen:
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
-            if gameStatus.game.emergencyMeeting == 1:
-                max_imp = None
-                max_vote = 0
-                for i in gameStatus.db.playerList.keys():
-                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
-                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
-                            max_vote = gameStatus.db.playerList.get(i).sdScore
-                            max_imp = gameStatus.db.playerList.get(i).name
-                if max_imp is not None:
-                    self.accuse(max_imp)
-                gameStatus.game.emergencyMeeting = 0
+
 
             nextActions = lowLevelStrategy(self.maxWeight, gameStatus.game.wantedFlagX, gameStatus.game.wantedFlagY)
 
@@ -420,7 +412,8 @@ class Karen:
             # AGGIORNAMENTO
             gameStatus.game.serverMap = self.lookAtMap(False)
             gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
-            self.lookStatus()
+            # self.lookStatus()
+
 
         if gameStatus.game.state != "FINISHED":
             print(gameStatus.game.me.name + " è morto.")
@@ -431,71 +424,39 @@ class Karen:
         return True
 
     def fStrategy(self):
+
         """
         Call the fuzzyStrategy. Uses fuzzy rule to take the best decision.
         This function will check if you are an impostor or not and check in which is the game's stage
         :return:
         """
-        TS_thread = TuringTestThread()
-        TS_thread.start()
+
         gameStatus.game.serverMap = self.lookAtMap(True)
         gameStatus.game.weightedMap = deterministicMap(self.maxWeight)
 
         while gameStatus.game.state != 'FINISHED' and gameStatus.game.me.state != "KILLED":
             if gameStatus.game.emergencyMeeting == 1:
-                max_imp = None
-                max_vote = 0.2
-                for i in gameStatus.db.playerList.keys():
-                    if gameStatus.game.me.name != gameStatus.db.playerList.get(i):
-                        if gameStatus.db.playerList.get(i).sdScore > max_vote:
-                            max_vote = gameStatus.db.playerList.get(i).sdScore
-                            max_imp = gameStatus.db.playerList.get(i).name
-                if max_imp is not None:
-                    self.accuse(max_imp)
-                gameStatus.game.emergencyMeeting = 0
-            # check the game stage and if i'm an impostor or not
-            if gameStatus.game.me.loyalty == gameStatus.game.me.team:
-                if gameStatus.game.stage == 0:
-                    endx, endy, nearestEnemyDistance = FuzzyControlSystemStage0(self.maxWeight)
-                elif gameStatus.game.stage == 1:
-                    endx, endy, nearestEnemyDistance = FuzzyControlSystemStage1(self.maxWeight)
-                else:
-                    endx, endy, nearestEnemyDistance = FuzzyControlSystemStage2(self.maxWeight)
-            else:
-                if gameStatus.game.stage == 0:
-                    endx, endy, nearestEnemyDistance = FuzzyControlSystemStage0(self.maxWeight)
-                else:
-                    endx, endy, nearestEnemyDistance = FuzzyControlSystemImpostor(self.maxWeight)
-                print(gameStatus.game.me.name + " impostor")
+                None
+                # check the game stage and if i'm an impostor or not
+
+            endx, endy, nearestEnemyDistance = FuzzyControlSystemStage0(self.maxWeight)
             # Avoid useless LOOK if I can't die moving
 
-            if gameStatus.game.stage == 0:
-                print(str(gameStatus.game.me.x) + " " + str(gameStatus.game.me.y) + " " + str(endx) + " " + str(endy))
-                for i in range(1, len(findPath(gameStatus.game.weightedMap, gameStatus.game.me, endx, endy))):
-                    try:
-                        direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap,
-                                                                                  gameStatus.game.me, endx, endy)
-                        if direction is not None:
-                            if self.move(direction):
-                                gameStatus.game.me.x = coordinates[0]
-                                gameStatus.game.me.y = coordinates[1]
-
-                    except():
-                        print("Exception generated by movement.move")
 
 
+            if int(nearestEnemyDistance // 2) > 2:
 
-            elif int(nearestEnemyDistance // 2) > 2:
                 for i in range(1, int(nearestEnemyDistance // 2)):
                     # se c'è qualcosa da votare vota uno else muoviti
-                    if len(gameStatus.judgeList) > 0:
-                        obj = gameStatus.judgeList.pop()
+                    if len(gameStatus.game.judgeList) > 0:
+                        obj = gameStatus.game.judgeList.pop()
                         obj_name = obj[0]
                         obj_nature = obj[1]
                         print(str(gameStatus.game.me.name) + 'giudica : ' + obj_name + ' ' + obj_nature + '\n')
                         self.judge(obj_name, obj_nature)
                     else:
                         try:
+
                             direction, coordinates = gameStatus.game.me.movement.move(gameStatus.game.weightedMap,
                                                                                       gameStatus.game.me, endx, endy)
                             if direction is not None:
@@ -514,7 +475,9 @@ class Karen:
                                 gameStatus.game.me.y = coordinates[1]
                     except():
                         print("Exception generated by movement.move")
+
             else:
+
                 if gameStatus.game.me.loyalty == gameStatus.game.me.team:
 
                     nextActions = lowLevelStrategy(self.maxWeight, endx, endy)
@@ -537,10 +500,11 @@ class Karen:
 
         while gameStatus.game.state == "ACTIVE":
             self.lookStatus()
-            if len(gameStatus.judgeList) > 0:
-                obj = gameStatus.judgeList.pop()
+            if len(gameStatus.game.judgeList) > 0:
+                obj = gameStatus.game.judgeList.pop()
                 obj_name = obj[0]
                 obj_nature = obj[1]
                 print('DA MANDARE: ' + obj_name + ' ' + obj_nature + '\n')
                 self.judge(obj_name, obj_nature)
+
         return True

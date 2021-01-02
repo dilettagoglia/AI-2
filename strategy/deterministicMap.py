@@ -32,7 +32,8 @@ def deterministicMap(maxWeight):
         """
         # da  muro a nemico
         for position in range(enemy.x, -1, -1):
-            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and rec_weightedMap[count][position] not in list(allies):
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and \
+                    rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[count][position], int) is False:
                     rec_weightedMap[count][position] = weight
             else:
@@ -40,7 +41,8 @@ def deterministicMap(maxWeight):
 
         # da nemico a muro
         for position in range(enemy.x, len(rec_weightedMap[count])):
-            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and rec_weightedMap[count][position] not in list(allies):
+            if rec_weightedMap[count][position] != '#' and rec_weightedMap[count][position] != "&" and \
+                    rec_weightedMap[count][position] not in list(allies):
                 if isinstance(rec_weightedMap[count][position], int) is False:
                     rec_weightedMap[count][position] = weight
             else:
@@ -48,14 +50,16 @@ def deterministicMap(maxWeight):
 
         # Controllo per colonne
         for position in range(enemy.y, -1, -1):
-            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and rec_weightedMap[count][position] not in list(allies):
+            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and \
+                    rec_weightedMap[position][j] not in list(allies):
                 if isinstance(rec_weightedMap[position][j], int) is False:
                     rec_weightedMap[position][j] = weight
             else:
                 break
-
-        for position in range(enemy.y, len(rec_weightedMap[j])):
-            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and rec_weightedMap[count][position] not in list(allies):
+        # print("POS ENEMY: " + str(enemy.x) + " " +str(enemy.y) +  "j value : " + str(j) + " max for value " + str(len(rec_weightedMap[j])))
+        for position in range(enemy.y, len(rec_weightedMap)):
+            if rec_weightedMap[position][j] != '#' and rec_weightedMap[position][j] != "&" and \
+                    rec_weightedMap[position][j] not in list(allies):
                 if isinstance(rec_weightedMap[position][j], int) is False:
                     rec_weightedMap[position][j] = weight
             else:
@@ -115,7 +119,8 @@ def deterministicMap(maxWeight):
             elif serverMap[i][j] == gameStatus.game.toBeDefendedFlagName:
                 weightedMap[i][j] = 0
 
-            elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][j] == gameStatus.game.me.symbol:
+            elif serverMap[i][j] in allies or serverMap[i][j] in enemies or serverMap[i][
+                j] == gameStatus.game.me.symbol:
                 weightedMap[i][j] = 1
 
     return weightedMap
